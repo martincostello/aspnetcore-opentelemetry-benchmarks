@@ -68,7 +68,7 @@ jobs:
     - name: Run benchmarks
       id: build
       shell: pwsh
-      run: ./build.ps1 -Job Short
+      run: ./benchmark.ps1 -Job Short
 
     - name: Publish artifacts
       uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
