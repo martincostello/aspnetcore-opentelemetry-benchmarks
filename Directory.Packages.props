@@ -1,5 +1,9 @@
 <Project>
   <ItemGroup>
+    <GlobalPackageReference Include="MartinCostello.BuildKit" Version="0.8.5" />
+    <GlobalPackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="All" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.1" />

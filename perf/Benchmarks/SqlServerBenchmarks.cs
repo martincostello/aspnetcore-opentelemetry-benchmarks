@@ -13,9 +13,9 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
 public class SqlServerBenchmarks : Benchmarks, IScenario
 {
-    protected override Uri Endpoint { get; } = new("/sqlserver", UriKind.Relative);
-
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new SqlServerFixture()];
+
+    protected override Uri Endpoint { get; } = new("/sqlserver", UriKind.Relative);
 
     public void Configure(IServiceCollection services)
     {
