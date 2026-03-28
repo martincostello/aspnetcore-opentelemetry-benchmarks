@@ -8,6 +8,8 @@ Benchmarks for [ASP.NET Core][aspnetcore] and [OpenTelemetry][opentelemetry-dotn
 that illustrate the performance overhead of using OpenTelemetry for logging, metrics
 and traces.
 
+You can see the latest results of the benchmarks in the job summary [of the latest run that can be found here][results].
+
 ## Building and Running
 
 Compiling the benchmarks yourself requires Git and the [.NET SDK][dotnet-sdk] to be installed.
@@ -72,3 +74,4 @@ This project is licensed under the [Apache 2.0][license] license.
 [package-sqlclient]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.SqlClient
 [package-redis]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.StackExchangeRedis
 [repo]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks
+[results]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks/actions/workflows/benchmark.yml?query=branch%3Amain+event%3Apush
