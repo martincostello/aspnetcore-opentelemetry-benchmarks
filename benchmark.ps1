@@ -89,6 +89,5 @@ $dotnetArgs = @(
 $p = Start-Process -FilePath $dotnet -ArgumentList $dotnetArgs -NoNewWindow -Wait -PassThru
 
 if ($p.ExitCode -ne 0) {
-    Write-Error "Benchmarks failed with exit code $($p.ExitCode)."
-    exit $p.ExitCode
+    throw "Benchmarks failed with exit code $($p.ExitCode)."
 }
