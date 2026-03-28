@@ -24,7 +24,11 @@ public class HttpClientBenchmarks : Benchmarks, IScenario
 
     public void Configure(IServiceCollection services)
     {
-        services.AddHttpClient();
+        services.AddHttpClient()
+                .ConfigureHttpClientDefaults((p) => p.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                }));
     }
 
     public void Configure(MeterProviderBuilder metrics)
