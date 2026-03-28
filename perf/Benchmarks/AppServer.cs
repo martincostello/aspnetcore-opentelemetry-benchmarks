@@ -57,7 +57,6 @@ internal sealed class AppServer : IAsyncDisposable
             _collector = new CollectorFixture();
             await _collector.StartAsync();
 
-            var container = _collector.TypedContainer;
             var endpoint = _collector.GetBaseAddress(4318);
 
             config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint.ToString()));
