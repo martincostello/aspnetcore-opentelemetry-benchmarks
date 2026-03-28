@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -15,12 +14,6 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 public class HttpClientBenchmarks : Benchmarks, IScenario
 {
     protected override Uri Endpoint { get; } = new("/httpclient", UriKind.Relative);
-
-    public void Configure(ILoggingBuilder builder)
-    {
-        builder.ClearProviders();
-        builder.AddConsole();
-    }
 
     public void Configure(IServiceCollection services)
     {
