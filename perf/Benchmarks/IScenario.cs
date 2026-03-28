@@ -17,6 +17,11 @@ public interface IScenario
 {
     IReadOnlyCollection<ContainerFixture> Containers { get; }
 
+    void Configure(ILoggingBuilder builder)
+    {
+        builder.ClearProviders();
+    }
+
     void Configure(IServiceCollection services)
     {
         // No-op
@@ -54,7 +59,7 @@ public interface IScenario
 
     void Configure(WebApplicationBuilder builder)
     {
-        builder.Logging.ClearProviders();
+        Configure(builder.Logging);
 
         if (!string.Equals(builder.Configuration["OTEL_SDK_DISABLED"], bool.TrueString, StringComparison.OrdinalIgnoreCase))
         {
