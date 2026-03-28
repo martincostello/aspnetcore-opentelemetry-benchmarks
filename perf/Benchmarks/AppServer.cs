@@ -21,7 +21,7 @@ internal sealed class AppServer : IAsyncDisposable
     {
         var handler = new HttpClientHandler()
         {
-            MaxAutomaticRedirections = 0,
+            AllowAutoRedirect = false,
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
         };
 
