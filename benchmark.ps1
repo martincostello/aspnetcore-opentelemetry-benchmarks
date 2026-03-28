@@ -4,7 +4,7 @@
 #Requires -Version 7
 
 param(
-    [Parameter(Mandatory = $false)][string] $Filter = "`*Benchmarks`*",
+    [Parameter(Mandatory = $false)][string] $Filter = "*",
     [Parameter(Mandatory = $false)][string] $Job = ""
 )
 
@@ -79,9 +79,16 @@ if (-Not [string]::IsNullOrEmpty(${env:GITHUB_SHA})) {
     $additionalArgs += "json"
 }
 
-& $dotnet run --project $benchmarks --configuration "Release" -- $additionalArgs
+$dotnetArgs = @(
+    "run"
+    "--project", $benchmarks
+    "--configuration", "Release"
+    "--"
+) + $additionalArgs
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Benchmarks failed with exit code $LASTEXITCODE."
-    exit $LASTEXITCODE
+$p = Start-Process -FilePath $dotnet -ArgumentList $dotnetArgs -NoNewWindow -Wait -PassThru
+
+if ($p.ExitCode -ne 0) {
+    Write-Error "Benchmarks failed with exit code $($p.ExitCode)."
+    exit $p.ExitCode
 }
