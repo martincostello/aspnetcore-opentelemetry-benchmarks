@@ -21,7 +21,7 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
     [GlobalSetup(Target = nameof(Baseline))]
     public Task StartServerWithoutTelemetry() => StartServer(enableTelemetry: false);
 
-    [GlobalSetup]
+    [GlobalSetup(Target = nameof(Telemetry))]
     public Task StartServerWithTelemetry() => StartServer(enableTelemetry: true);
 
     [GlobalCleanup]
