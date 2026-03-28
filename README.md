@@ -8,7 +8,7 @@ Benchmarks for [ASP.NET Core][aspnetcore] and [OpenTelemetry][opentelemetry-dotn
 that illustrate the performance overhead of using OpenTelemetry for logging, metrics
 and traces.
 
-You can see the latest results of the benchmarks in the job summary [of the latest run here][results].
+You can see the latest results of the benchmarks in the job summary [of the latest run that can be found here][results].
 
 ## Building and Running
 
