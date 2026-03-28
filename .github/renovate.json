@@ -5,6 +5,11 @@
       "extends": ["monorepo:aws-sdk-net"],
       "description": ["Only update the AWS SDKs once a week"],
       "schedule": ["* 5-21 * * MON"]
+    },
+    {
+      "extends": ["monorepo:opentelemetry-dotnet", "monorepo:opentelemetry-dotnet-contrib"],
+      "description": ["Disable prerelease versions of .NET OpenTelemetry packages"],
+      "ignoreUnstable": true
     }
   ]
 }
