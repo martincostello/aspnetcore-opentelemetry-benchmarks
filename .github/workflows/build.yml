@@ -1,0 +1,105 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.gitattributes'
+      - '**/*.gitignore'
+      - '**/*.md'
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: true
+  DOTNET_NOLOGO: true
+  DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: 1
+  FORCE_COLOR: 1
+  NUGET_XMLDOC_MODE: skip
+  TERM: xterm
+
+permissions: {}
+
+jobs:
+  build:
+    name: ${{ matrix.os-name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os-name: linux
+            runner: ubuntu-latest
+
+    steps:
+
+    - name: Update agent configuration
+      shell: pwsh
+      run: |
+        if ($IsWindows) {
+          "DOTNET_INSTALL_DIR=D:\tools\dotnet" >> ${env:GITHUB_ENV}
+          "DOTNET_ROOT=D:\tools\dotnet" >> ${env:GITHUB_ENV}
+          "NUGET_PACKAGES=D:\.nuget\packages" >> ${env:GITHUB_ENV}
+        } else {
+          $nugetHome = "~/.nuget/packages"
+          if (-Not (Test-Path $nugetHome)) {
+            New-Item -Path $nugetHome -Type Directory -Force | Out-Null
+          }
+          $nugetHome = Resolve-Path $nugetHome
+          "NUGET_PACKAGES=$nugetHome" >> ${env:GITHUB_ENV}
+        }
+
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        filter: 'tree:0'
+        persist-credentials: false
+        show-progress: false
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+
+    - name: Run benchmarks
+      id: build
+      shell: pwsh
+      run: ./benchmark.ps1 -Job Short
+
+    - name: Publish artifacts
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      if: ${{ !cancelled() }}
+      with:
+        name: benchmarks-${{ matrix.os-name }}
+        path: ./BenchmarkDotNet.Artifacts/results/*
+        if-no-files-found: error
+
+    - name: Output summary
+      shell: pwsh
+      run: |
+        $summary = @()
+        $summary += "# Benchmark Results"
+        $summary += ""
+
+        $benchmarkResults = Get-ChildItem -Path "./BenchmarkDotNet.Artifacts/results/*.md"
+
+        foreach ($result in $benchmarkResults) {
+          $title = [System.IO.Path]::GetFileNameWithoutExtension($result.Name)
+          $title = $title.Split('-')[0]
+          $title = $title.Split('.')[-1]
+
+          $summary += "## ${title}"
+          $summary += ""
+
+          Get-Content $result.FullName | ForEach-Object { $summary += $_ }
+          $summary += ""
+        }
+
+        $summary += ""
+
+        $text = $summary -Join "`n"
+        $text >> ${env:GITHUB_STEP_SUMMARY}
