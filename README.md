@@ -1,2 +1,3 @@
-# aspnetcore-opentelemetry-benchmarks
-Benchmarks for ASP.NET Core and OpenTelemetry
+# ASP.NET Core and OpenTelemetry Benchmarks
+
+Benchmarks for ASP.NET Core and OpenTelemetry.

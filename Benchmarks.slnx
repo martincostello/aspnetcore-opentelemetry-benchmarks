@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/perf/">
+    <Project Path="perf/Benchmarks/Benchmarks.csproj" />
+  </Folder>
+</Solution>

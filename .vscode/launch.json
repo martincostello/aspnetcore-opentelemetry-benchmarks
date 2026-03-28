@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run benchmarks",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--configuration",
+        "Release",
+        "--",
+        "--filter",
+        "*"
+      ],
+      "cwd": "${workspaceFolder}/perf/Benchmarks",
+      "stopAtEntry": false
+    }
+  ]
+}
