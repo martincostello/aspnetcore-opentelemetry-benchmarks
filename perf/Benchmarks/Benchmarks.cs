@@ -6,7 +6,9 @@ using BenchmarkDotNet.Diagnosers;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+#if ENABLE_CPU_SAMPLING
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
+#endif
 [MemoryDiagnoser]
 public abstract class Benchmarks : IAsyncDisposable, IScenario
 {
