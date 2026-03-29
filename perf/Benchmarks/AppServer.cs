@@ -130,7 +130,7 @@ internal sealed class AppServer : IAsyncDisposable
 
     private static string? GetRepositoryPath()
     {
-        var directoryInfo = new DirectoryInfo(Path.GetDirectoryName(typeof(AppServer).Assembly.Location)!);
+        var directoryInfo = new DirectoryInfo(Path.GetDirectoryName(AppContext.BaseDirectory)!);
 
         do
         {
