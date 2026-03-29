@@ -17,5 +17,7 @@ public sealed class CollectorFixture : ContainerFixture<IContainer>
             .WithPortBinding(4318)
             .WithPortBinding(9090)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(3000)))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(4317))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(4318))
             .Build();
 }

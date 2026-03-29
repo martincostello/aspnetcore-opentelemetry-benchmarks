@@ -22,7 +22,7 @@ internal sealed class AppServer : IAsyncDisposable
         var handler = new HttpClientHandler()
         {
             AllowAutoRedirect = false,
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+            CheckCertificateRevocationList = true,
         };
 
         return new(handler, disposeHandler: true)
@@ -45,7 +45,7 @@ internal sealed class AppServer : IAsyncDisposable
 
         var builder = WebApplication.CreateBuilder([$"--contentRoot={GetContentRoot()}"]);
 
-        builder.WebHost.UseUrls("https://127.0.0.1:0");
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
 
         var config = new List<KeyValuePair<string, string?>>()
         {
