@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Benchmarks for ASP.NET Core and OpenTelemetry.</Description>
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
     <OutputType>Exe</OutputType>
+    <PublishAot>false</PublishAot>
     <RootNamespace>MartinCostello.AspNetCoreOpenTelemetry.Benchmarks</RootNamespace>
     <TargetFrameworks>net10.0</TargetFrameworks>
   </PropertyGroup>

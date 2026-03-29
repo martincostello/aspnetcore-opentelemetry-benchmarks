@@ -34,7 +34,7 @@ public class MetricBenchmarks : Benchmarks, IScenario
         });
     }
 
-    private sealed class CustomMetrics
+    internal sealed class CustomMetrics
     {
         private readonly Counter<int> _counter;
 
