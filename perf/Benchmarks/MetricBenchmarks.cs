@@ -11,7 +11,7 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
 public class MetricBenchmarks : Benchmarks, IScenario
 {
-    private static readonly string MeterName = typeof(MetricBenchmarks).FullName!;
+    internal static readonly string MeterName = typeof(MetricBenchmarks).FullName!;
 
     protected override Uri Endpoint { get; } = new("/metrics", UriKind.Relative);
 
