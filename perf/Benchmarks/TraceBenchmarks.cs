@@ -10,7 +10,7 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
 public class TraceBenchmarks : Benchmarks, IScenario
 {
-    private static readonly ActivitySource CustomSource = new(typeof(TraceBenchmarks).FullName!);
+    internal static readonly ActivitySource CustomSource = new(typeof(TraceBenchmarks).FullName!);
 
     protected override Uri Endpoint { get; } = new("/traces", UriKind.Relative);
 
