@@ -3,7 +3,6 @@
 
 using Amazon.S3;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
@@ -81,7 +80,12 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
         var redis = Containers.OfType<RedisFixture>().Single();
         configuration.Add(KeyValuePair.Create<string, string?>("ConnectionStrings:Redis", redis.TypedContainer.GetConnectionString()));
+
+        var sqlServer = Containers.OfType<SqlServerFixture>().Single();
+        configuration.Add(KeyValuePair.Create<string, string?>("ConnectionStrings:SqlServer", sqlServer.TypedContainer.GetConnectionString()));
     }
+
+#pragma warning disable IL2026
 
     public void Configure(MeterProviderBuilder metrics)
     {
@@ -101,6 +105,8 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
                .AddSource(TraceBenchmarks.CustomSource.Name);
     }
 
+#pragma warning restore IL2026
+
     public void Configure(WebApplication app)
     {
         app.MapGet("/everything", async (IAmazonS3 client, Microsoft.AspNetCore.Hosting.Server.IServer server, HttpClient httpClient, MetricBenchmarks.CustomMetrics metrics, IDatabase database, SqlConnection connection) =>
@@ -112,7 +118,7 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
             var baseAddress = serverAddresses!.Addresses.Select((p) => new Uri(p)).Last();
             var requestUri = new Uri(baseAddress, "/echo");
 
-            var response = await httpClient.GetStringAsync(requestUri);
+            _ = await httpClient.GetStringAsync(requestUri);
 
             _ = await client.ListBucketsAsync();
 
@@ -130,13 +136,11 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
             command.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES";
 
-            var tables = new List<string>();
-
             await using (var reader = await command.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
                 {
-                    tables.Add(reader.GetString(0));
+                    _ = reader.GetString(0);
                 }
             }
 
