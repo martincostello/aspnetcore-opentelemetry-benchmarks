@@ -35,7 +35,7 @@ jobs:
       matrix:
         include:
           - os-name: linux
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
 
     steps:
 
