@@ -95,7 +95,7 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
         _disposed = true;
     }
 
-    private async Task StartServer(TelemetryConfiguration configuration)
+    protected virtual async Task StartServer(TelemetryConfiguration configuration)
     {
         if (_app is not null)
         {
