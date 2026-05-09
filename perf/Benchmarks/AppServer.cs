@@ -31,7 +31,7 @@ internal sealed class AppServer : IAsyncDisposable
         };
     }
 
-    public async Task StartAsync(IScenario scenario, bool enableTelemetry)
+    public async Task StartAsync(IScenario scenario, TelemetryConfiguration configuration)
     {
         if (_app is not null)
         {
@@ -49,18 +49,45 @@ internal sealed class AppServer : IAsyncDisposable
 
         var config = new List<KeyValuePair<string, string?>>()
         {
-            KeyValuePair.Create<string, string?>("OTEL_SDK_DISABLED", (!enableTelemetry).ToString()),
+            KeyValuePair.Create<string, string?>("OTEL_SDK_DISABLED", configuration.Disabled.ToString()),
         };
 
-        if (enableTelemetry)
+        if (configuration.EnableAny)
         {
             _collector = new CollectorFixture();
             await _collector.StartAsync();
 
             var endpoint = _collector.GetBaseAddress(4318);
+            var protocol = "http/protobuf";
 
-            config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint.ToString()));
-            config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"));
+            if (configuration.EnableAll)
+            {
+                config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint.ToString()));
+                config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_PROTOCOL", protocol));
+            }
+            else
+            {
+                if (configuration.EnableLogs)
+                {
+                    config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", GetEndpoint("/v1/logs")));
+                    config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", protocol));
+                }
+
+                if (configuration.EnableMetrics)
+                {
+                    config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", GetEndpoint("/v1/metrics")));
+                    config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", protocol));
+                }
+
+                if (configuration.EnableTraces)
+                {
+                    config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", GetEndpoint("/v1/traces")));
+                    config.Add(KeyValuePair.Create<string, string?>("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", protocol));
+                }
+
+                string GetEndpoint(string path)
+                    => new UriBuilder(endpoint) { Path = path }.Uri.ToString();
+            }
 
 #if DEBUG
             // Export data more frequently for easier debugging with a UI
@@ -74,7 +101,7 @@ internal sealed class AppServer : IAsyncDisposable
 
         builder.Configuration.AddInMemoryCollection(config);
 
-        scenario.Configure(builder);
+        scenario.Configure(builder, configuration);
 
         _app = builder.Build();
 

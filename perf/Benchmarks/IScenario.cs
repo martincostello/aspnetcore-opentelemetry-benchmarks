@@ -32,14 +32,20 @@ public interface IScenario
         // No-op
     }
 
-    void Configure(OpenTelemetryBuilder telemetry)
+    void Configure(OpenTelemetryBuilder telemetry, TelemetryConfiguration configuration)
     {
         telemetry.ConfigureResource((resource) => resource.AddService("Benchmarks"))
                  .UseOtlpExporter();
 
-        telemetry.WithMetrics(Configure);
+        if (configuration.EnableMetrics)
+        {
+            telemetry.WithMetrics(Configure);
+        }
 
-        telemetry.WithTracing(Configure);
+        if (configuration.EnableTraces)
+        {
+            telemetry.WithTracing(Configure);
+        }
     }
 
     void Configure(OpenTelemetryLoggerOptions options)
@@ -57,17 +63,20 @@ public interface IScenario
         // No-op
     }
 
-    void Configure(WebApplicationBuilder builder)
+    void Configure(WebApplicationBuilder builder, TelemetryConfiguration configuration)
     {
         Configure(builder.Logging);
 
-        if (!string.Equals(builder.Configuration["OTEL_SDK_DISABLED"], bool.TrueString, StringComparison.OrdinalIgnoreCase))
+        if (configuration.EnableAny)
         {
-            builder.Logging.AddOpenTelemetry(Configure);
+            if (configuration.EnableLogs)
+            {
+                builder.Logging.AddOpenTelemetry(Configure);
+            }
 
             var telemetry = builder.Services.AddOpenTelemetry();
 
-            Configure(telemetry);
+            Configure(telemetry, configuration);
         }
 
         Configure(builder.Services);

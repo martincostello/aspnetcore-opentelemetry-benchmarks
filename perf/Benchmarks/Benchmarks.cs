@@ -21,10 +21,19 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
     protected abstract Uri Endpoint { get; }
 
     [GlobalSetup(Target = nameof(Baseline))]
-    public Task StartServerWithoutTelemetry() => StartServer(enableTelemetry: false);
+    public Task StartServerNoTelemetry() => StartServer(TelemetryConfiguration.None);
 
-    [GlobalSetup(Target = nameof(Telemetry))]
-    public Task StartServerWithTelemetry() => StartServer(enableTelemetry: true);
+    [GlobalSetup(Target = nameof(Logs))]
+    public Task StartServerWithLogs() => StartServer(TelemetryConfiguration.Logs);
+
+    [GlobalSetup(Target = nameof(Metrics))]
+    public Task StartServerWithMetrics() => StartServer(TelemetryConfiguration.Metrics);
+
+    [GlobalSetup(Target = nameof(Traces))]
+    public Task StartServerWithTraces() => StartServer(TelemetryConfiguration.Traces);
+
+    [GlobalSetup(Target = nameof(AllTelemetry))]
+    public Task StartServerWithAllTelemetry() => StartServer(TelemetryConfiguration.All);
 
     [GlobalCleanup]
     public async Task StopServer()
@@ -41,7 +50,19 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
         => await _client!.GetByteArrayAsync(Endpoint);
 
     [Benchmark]
-    public async Task<byte[]> Telemetry()
+    public async Task<byte[]> Logs()
+        => await _client!.GetByteArrayAsync(Endpoint);
+
+    [Benchmark]
+    public async Task<byte[]> Metrics()
+        => await _client!.GetByteArrayAsync(Endpoint);
+
+    [Benchmark]
+    public async Task<byte[]> Traces()
+        => await _client!.GetByteArrayAsync(Endpoint);
+
+    [Benchmark]
+    public async Task<byte[]> AllTelemetry()
         => await _client!.GetByteArrayAsync(Endpoint);
 
     public async ValueTask DisposeAsync()
@@ -68,11 +89,11 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
         _disposed = true;
     }
 
-    private async Task StartServer(bool enableTelemetry)
+    private async Task StartServer(TelemetryConfiguration configuration)
     {
         if (_app is not null)
         {
-            await _app.StartAsync(this, enableTelemetry);
+            await _app.StartAsync(this, configuration);
             _client = _app.CreateHttpClient();
         }
     }

@@ -34,6 +34,7 @@ public class SqlServerBenchmarks : Benchmarks, IScenario
         configuration.Add(KeyValuePair.Create<string, string?>("ConnectionStrings:SqlServer", sqlServer.TypedContainer.GetConnectionString()));
     }
 
+#pragma warning disable IL2026
     public void Configure(MeterProviderBuilder metrics)
     {
         metrics.AddSqlClientInstrumentation();
@@ -43,6 +44,7 @@ public class SqlServerBenchmarks : Benchmarks, IScenario
     {
         tracing.AddSqlClientInstrumentation();
     }
+#pragma warning restore IL2026
 
     public void Configure(WebApplication app)
     {
