@@ -10,6 +10,7 @@ using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("AWS")]
 public class AwsBenchmarks : Benchmarks, IScenario
 {
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new LocalStackFixture()];

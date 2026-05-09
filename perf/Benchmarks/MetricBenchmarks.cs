@@ -9,6 +9,7 @@ using OpenTelemetry.Metrics;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("Metrics")]
 public class MetricBenchmarks : Benchmarks, IScenario
 {
     internal static readonly string MeterName = typeof(MetricBenchmarks).FullName!;

@@ -11,6 +11,7 @@ using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("SQL")]
 public class SqlServerBenchmarks : Benchmarks, IScenario
 {
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new SqlServerFixture()];

@@ -10,6 +10,7 @@ using StackExchange.Redis;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("Redis")]
 public class RedisBenchmarks : Benchmarks, IScenario
 {
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new RedisFixture()];

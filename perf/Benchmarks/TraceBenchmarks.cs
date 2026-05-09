@@ -8,6 +8,7 @@ using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("Traces")]
 public class TraceBenchmarks : Benchmarks, IScenario
 {
     internal static readonly ActivitySource CustomSource = new(typeof(TraceBenchmarks).FullName!);

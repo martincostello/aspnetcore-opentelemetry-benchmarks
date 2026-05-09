@@ -15,6 +15,14 @@ using StackExchange.Redis;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("ASP.NET Core")]
+[BenchmarkCategory("AWS")]
+[BenchmarkCategory("HTTP")]
+[BenchmarkCategory("Logs")]
+[BenchmarkCategory("Metrics")]
+[BenchmarkCategory("Redis")]
+[BenchmarkCategory("SQL")]
+[BenchmarkCategory("Traces")]
 public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 {
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } =

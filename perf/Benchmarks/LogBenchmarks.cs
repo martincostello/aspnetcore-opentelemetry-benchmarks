@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("Logs")]
 public partial class LogBenchmarks : Benchmarks, IScenario
 {
     protected override Uri Endpoint { get; } = new("/logs", UriKind.Relative);
