@@ -30,7 +30,8 @@ public class AspNetCoreBenchmarks : Benchmarks, IScenario
 
     protected override async Task StartServer(TelemetryConfiguration configuration)
     {
-        AppContext.SetSwitch("Microsoft.AspNetCore.Hosting.SuppressActivityOpenTelemetryData", false);
+        // TODO Depends on https://github.com/open-telemetry/opentelemetry-dotnet-contrib/pull/4376
+        ////AppContext.SetSwitch("Microsoft.AspNetCore.Hosting.SuppressActivityOpenTelemetryData", false);
         await base.StartServer(configuration);
     }
 }
