@@ -109,6 +109,7 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
     public void Configure(WebApplication app)
     {
+        app.MapGet("/echo", () => TypedResults.Text("e c h o"));
         app.MapGet("/everything", async (IAmazonS3 client, Microsoft.AspNetCore.Hosting.Server.IServer server, HttpClient httpClient, MetricBenchmarks.CustomMetrics metrics, IDatabase database, SqlConnection connection) =>
         {
             using var activity = TraceBenchmarks.CustomSource.StartActivity("CustomActivity");
