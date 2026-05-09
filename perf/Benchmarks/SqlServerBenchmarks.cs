@@ -55,19 +55,10 @@ public class SqlServerBenchmarks : Benchmarks, IScenario
 
             await using var command = connection.CreateCommand();
 
-            command.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES";
+            command.CommandText = "SELECT 1";
+            _ = await command.ExecuteScalarAsync();
 
-            var tables = new List<string>();
-
-            await using (var reader = await command.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                {
-                    tables.Add(reader.GetString(0));
-                }
-            }
-
-            return TypedResults.Ok(tables);
+            return TypedResults.NoContent();
         });
     }
 }

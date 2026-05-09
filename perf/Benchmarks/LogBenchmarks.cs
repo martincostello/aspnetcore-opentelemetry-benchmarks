@@ -20,7 +20,7 @@ public partial class LogBenchmarks : Benchmarks, IScenario
 
             Log.DiceRoll(app.Logger, result);
 
-            return TypedResults.Ok(result.ToString(CultureInfo.InvariantCulture));
+            return TypedResults.NoContent();
         });
     }
 

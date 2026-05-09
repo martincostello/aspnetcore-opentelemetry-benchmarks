@@ -17,6 +17,10 @@ internal sealed class AppServer : IAsyncDisposable
     private CollectorFixture? _collector;
     private bool _disposed;
 
+    public Uri BaseAddress => _baseAddress ?? throw new InvalidOperationException("The server has not started.");
+
+    public IServiceProvider Services => _app?.Services ?? throw new InvalidOperationException("The server has not started.");
+
     public HttpClient CreateHttpClient()
     {
         var handler = new HttpClientHandler()

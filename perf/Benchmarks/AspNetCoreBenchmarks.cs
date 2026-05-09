@@ -25,7 +25,7 @@ public class AspNetCoreBenchmarks : Benchmarks, IScenario
 
     public void Configure(WebApplication app)
     {
-        app.MapGet("/ping", () => TypedResults.Text("pong"));
+        app.MapGet("/ping", () => TypedResults.NoContent());
     }
 
     protected override async Task StartServer(TelemetryConfiguration configuration)

@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
 using Amazon.S3;
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +14,8 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 [BenchmarkCategory("AWS")]
 public class AwsBenchmarks : Benchmarks, IScenario
 {
+    private const string BucketName = "benchmarks";
+
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new LocalStackFixture()];
 
     protected override Uri Endpoint { get; } = new("/s3", UriKind.Relative);
@@ -58,11 +61,15 @@ public class AwsBenchmarks : Benchmarks, IScenario
     {
         app.MapGet("/s3", async (IAmazonS3 client) =>
         {
-            var response = await client.ListBucketsAsync();
+            _ = await client.GetBucketLocationAsync(BucketName);
 
-            var buckets = response.Buckets?.Select((p) => p.BucketName).ToArray() ?? [];
-
-            return TypedResults.Ok(buckets);
+            return TypedResults.NoContent();
         });
+    }
+
+    protected override async Task OnServerStartedAsync()
+    {
+        var client = Services.GetRequiredService<IAmazonS3>();
+        await client.PutBucketAsync(new PutBucketRequest() { BucketName = BucketName });
     }
 }

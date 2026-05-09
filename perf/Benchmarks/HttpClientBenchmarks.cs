@@ -2,8 +2,6 @@
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
@@ -14,6 +12,8 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 [BenchmarkCategory("HTTP")]
 public class HttpClientBenchmarks : Benchmarks, IScenario
 {
+    private Uri? _echoUri;
+
     protected override Uri Endpoint { get; } = new("/httpclient", UriKind.Relative);
 
     public void Configure(IServiceCollection services)
@@ -33,17 +33,20 @@ public class HttpClientBenchmarks : Benchmarks, IScenario
 
     public void Configure(WebApplication app)
     {
-        app.MapGet("/httpclient", async (IServer server, HttpClient httpClient) =>
+        app.MapGet("/httpclient", async (HttpClient httpClient) =>
         {
-            var serverAddresses = server.Features.Get<IServerAddressesFeature>();
-            var baseAddress = serverAddresses!.Addresses.Select((p) => new Uri(p)).Last();
-            var requestUri = new Uri(baseAddress, "/echo");
+            using var response = await httpClient.GetAsync(_echoUri, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
 
-            var response = await httpClient.GetStringAsync(requestUri);
-
-            return TypedResults.Text(response);
+            return TypedResults.NoContent();
         });
 
-        app.MapGet("/echo", () => TypedResults.Text("e c h o"));
+        app.MapGet("/echo", () => TypedResults.NoContent());
+    }
+
+    protected override Task OnServerStartedAsync()
+    {
+        _echoUri = new Uri(BaseAddress, "/echo");
+        return Task.CompletedTask;
     }
 }

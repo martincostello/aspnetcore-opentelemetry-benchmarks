@@ -44,9 +44,9 @@ public class RedisBenchmarks : Benchmarks, IScenario
     {
         app.MapGet("/redis", async (IDatabase database) =>
         {
-            var value = await database.ListLengthAsync("list");
+            _ = await database.PingAsync();
 
-            return TypedResults.Ok(value);
+            return TypedResults.NoContent();
         });
     }
 }
