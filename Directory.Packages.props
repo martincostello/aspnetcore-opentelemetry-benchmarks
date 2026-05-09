@@ -7,13 +7,13 @@
     <PackageVersion Include="AWSSDK.S3" Version="4.0.23" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.15.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.4-alpha.0.100" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.4-alpha.0.100" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.3-alpha.0.99" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.15.2-alpha.0.100" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.2-alpha.0.87" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.3-alpha.0.81" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.1.80" />
     <PackageVersion Include="StackExchange.Redis" Version="2.12.14" />
     <PackageVersion Include="Testcontainers" Version="4.11.0" />
     <PackageVersion Include="Testcontainers.LocalStack" Version="4.11.0" />
