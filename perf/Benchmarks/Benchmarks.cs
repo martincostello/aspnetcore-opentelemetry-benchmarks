@@ -1,7 +1,6 @@
 // Copyright (c) Martin Costello, 2026. All rights reserved.
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
-using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
@@ -46,22 +45,29 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
     }
 
     [Benchmark(Baseline = true)]
+    [BenchmarkCategory("Baseline")]
     public async Task<byte[]> Baseline()
         => await _client!.GetByteArrayAsync(Endpoint);
 
     [Benchmark]
+    [BenchmarkCategory("Logs")]
     public async Task<byte[]> Logs()
         => await _client!.GetByteArrayAsync(Endpoint);
 
     [Benchmark]
+    [BenchmarkCategory("Metrics")]
     public async Task<byte[]> Metrics()
         => await _client!.GetByteArrayAsync(Endpoint);
 
     [Benchmark]
+    [BenchmarkCategory("Traces")]
     public async Task<byte[]> Traces()
         => await _client!.GetByteArrayAsync(Endpoint);
 
     [Benchmark]
+    [BenchmarkCategory("Logs")]
+    [BenchmarkCategory("Metrics")]
+    [BenchmarkCategory("Traces")]
     public async Task<byte[]> AllTelemetry()
         => await _client!.GetByteArrayAsync(Endpoint);
 

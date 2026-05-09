@@ -11,6 +11,7 @@ using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("HTTP")]
 public class HttpClientBenchmarks : Benchmarks, IScenario
 {
     protected override Uri Endpoint { get; } = new("/httpclient", UriKind.Relative);

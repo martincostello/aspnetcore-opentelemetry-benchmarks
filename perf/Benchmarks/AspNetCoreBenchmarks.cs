@@ -8,6 +8,7 @@ using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("ASP.NET Core")]
 public class AspNetCoreBenchmarks : Benchmarks, IScenario
 {
     protected override Uri Endpoint { get; } = new("/ping", UriKind.Relative);
