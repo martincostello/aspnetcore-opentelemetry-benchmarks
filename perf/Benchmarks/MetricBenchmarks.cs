@@ -31,7 +31,7 @@ public class MetricBenchmarks : Benchmarks, IScenario
         app.MapGet("/metrics", (CustomMetrics metrics) =>
         {
             metrics.Increment();
-            return TypedResults.Ok();
+            return TypedResults.NoContent();
         });
     }
 

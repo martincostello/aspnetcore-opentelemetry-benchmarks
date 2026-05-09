@@ -11,6 +11,9 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 [MemoryDiagnoser]
 public abstract class Benchmarks : IAsyncDisposable, IScenario
 {
+    private const int OperationsPerInvoke = 32;
+    private const int WarmupRequestCount = 3;
+
     private AppServer? _app = new();
     private HttpClient? _client;
     private bool _disposed;
@@ -18,6 +21,10 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
     public virtual IReadOnlyCollection<ContainerFixture> Containers => [];
 
     protected abstract Uri Endpoint { get; }
+
+    protected Uri BaseAddress => _app?.BaseAddress ?? throw new InvalidOperationException("The server has not started.");
+
+    protected IServiceProvider Services => _app?.Services ?? throw new InvalidOperationException("The server has not started.");
 
     [GlobalSetup(Target = nameof(Baseline))]
     public Task StartServerNoTelemetry() => StartServer(TelemetryConfiguration.None);
@@ -44,32 +51,32 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
         }
     }
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true, OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Baseline")]
-    public async Task<byte[]> Baseline()
-        => await _client!.GetByteArrayAsync(Endpoint);
+    public Task<int> Baseline()
+        => SendRequestsAsync();
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Logs")]
-    public async Task<byte[]> Logs()
-        => await _client!.GetByteArrayAsync(Endpoint);
+    public Task<int> Logs()
+        => SendRequestsAsync();
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Metrics")]
-    public async Task<byte[]> Metrics()
-        => await _client!.GetByteArrayAsync(Endpoint);
+    public Task<int> Metrics()
+        => SendRequestsAsync();
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Traces")]
-    public async Task<byte[]> Traces()
-        => await _client!.GetByteArrayAsync(Endpoint);
+    public Task<int> Traces()
+        => SendRequestsAsync();
 
-    [Benchmark]
+    [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Logs")]
     [BenchmarkCategory("Metrics")]
     [BenchmarkCategory("Traces")]
-    public async Task<byte[]> AllTelemetry()
-        => await _client!.GetByteArrayAsync(Endpoint);
+    public Task<int> AllTelemetry()
+        => SendRequestsAsync();
 
     public async ValueTask DisposeAsync()
     {
@@ -101,6 +108,33 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
         {
             await _app.StartAsync(this, configuration);
             _client = _app.CreateHttpClient();
+            await OnServerStartedAsync();
+            await WarmupAsync();
+        }
+    }
+
+    protected virtual Task OnServerStartedAsync() => Task.CompletedTask;
+
+    private async Task<int> SendRequestsAsync()
+    {
+        int statusCode = 0;
+
+        for (int i = 0; i < OperationsPerInvoke; i++)
+        {
+            using var response = await _client!.GetAsync(Endpoint, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+            statusCode += (int)response.StatusCode;
+        }
+
+        return statusCode;
+    }
+
+    private async Task WarmupAsync()
+    {
+        for (int i = 0; i < WarmupRequestCount; i++)
+        {
+            using var response = await _client!.GetAsync(Endpoint, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
         }
     }
 }

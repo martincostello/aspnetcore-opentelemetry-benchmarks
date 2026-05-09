@@ -1,9 +1,9 @@
-// Copyright (c) Martin Costello, 2026. All rights reserved.
+﻿// Copyright (c) Martin Costello, 2026. All rights reserved.
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
 using Amazon.S3;
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +25,10 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 [BenchmarkCategory("Traces")]
 public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 {
+    private const string BucketName = "benchmarks";
+
+    private Uri? _echoUri;
+
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } =
     [
         new LocalStackFixture(),
@@ -117,19 +121,18 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
     public void Configure(WebApplication app)
     {
-        app.MapGet("/echo", () => TypedResults.Text("e c h o"));
-        app.MapGet("/everything", async (IAmazonS3 client, Microsoft.AspNetCore.Hosting.Server.IServer server, HttpClient httpClient, MetricBenchmarks.CustomMetrics metrics, IDatabase database, SqlConnection connection) =>
+        app.MapGet("/echo", () => TypedResults.NoContent());
+        app.MapGet("/everything", async (IAmazonS3 client, HttpClient httpClient, MetricBenchmarks.CustomMetrics metrics, IDatabase database, SqlConnection connection) =>
         {
             using var activity = TraceBenchmarks.CustomSource.StartActivity("CustomActivity");
             activity?.SetTag("custom.trace.tag", "value");
 
-            var serverAddresses = server.Features.Get<IServerAddressesFeature>();
-            var baseAddress = serverAddresses!.Addresses.Select((p) => new Uri(p)).Last();
-            var requestUri = new Uri(baseAddress, "/echo");
+            using (var response = await httpClient.GetAsync(_echoUri, HttpCompletionOption.ResponseHeadersRead))
+            {
+                response.EnsureSuccessStatusCode();
+            }
 
-            _ = await httpClient.GetStringAsync(requestUri);
-
-            _ = await client.ListBucketsAsync();
+            _ = await client.GetBucketLocationAsync(BucketName);
 
             var result = Random.Shared.Next(1, 7);
 
@@ -137,24 +140,25 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
             metrics.Increment();
 
-            _ = await database.ListLengthAsync("list");
+            _ = await database.PingAsync();
 
             await connection.OpenAsync();
 
             await using var command = connection.CreateCommand();
 
-            command.CommandText = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES";
+            command.CommandText = "SELECT 1";
+            _ = await command.ExecuteScalarAsync();
 
-            await using (var reader = await command.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                {
-                    _ = reader.GetString(0);
-                }
-            }
-
-            return TypedResults.Ok();
+            return TypedResults.NoContent();
         });
+    }
+
+    protected override async Task OnServerStartedAsync()
+    {
+        _echoUri = new Uri(BaseAddress, "/echo");
+
+        var client = Services.GetRequiredService<IAmazonS3>();
+        await client.PutBucketAsync(new PutBucketRequest() { BucketName = BucketName });
     }
 
     private static partial class Log

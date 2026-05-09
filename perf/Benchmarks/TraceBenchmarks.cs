@@ -27,7 +27,7 @@ public class TraceBenchmarks : Benchmarks, IScenario
             using var activity = CustomSource.StartActivity("CustomActivity");
             activity?.SetTag("custom.trace.tag", "value");
 
-            return TypedResults.Ok();
+            return TypedResults.NoContent();
         });
     }
 }

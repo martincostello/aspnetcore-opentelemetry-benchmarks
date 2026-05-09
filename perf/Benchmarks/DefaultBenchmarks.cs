@@ -12,6 +12,6 @@ public class DefaultBenchmarks : Benchmarks, IScenario
 
     public void Configure(WebApplication app)
     {
-        app.MapGet("/default", () => TypedResults.Ok());
+        app.MapGet("/default", () => TypedResults.NoContent());
     }
 }
