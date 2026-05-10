@@ -647,7 +647,7 @@ jobs:
         New-Item -Path $artifactsDir -ItemType Directory -Force | Out-Null
 
         aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" $zipPath --region ${env:AWS_REGION} --only-show-errors 2>$null
-        aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors
+        aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors 2>$null
 
         if (Test-Path $zipPath) {
           Expand-Archive -Path $zipPath -DestinationPath $artifactsDir -Force
