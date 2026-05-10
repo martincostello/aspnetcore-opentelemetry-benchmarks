@@ -67,7 +67,8 @@ else {
 $dotnet = Join-Path ${env:DOTNET_INSTALL_DIR} "dotnet"
 
 if ($installDotNetSdk) {
-    ${env:PATH} = "${env:DOTNET_INSTALL_DIR};${env:PATH}"
+    $separator = $IsWindows ? ";" : ":"
+    ${env:PATH} = "${env:DOTNET_INSTALL_DIR}${separator}${env:PATH}"
 }
 
 $benchmarks = (Join-Path $solutionPath "perf" "Benchmarks" "Benchmarks.csproj")
