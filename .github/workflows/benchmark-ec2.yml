@@ -325,6 +325,7 @@ jobs:
         apt-get install -y --no-install-recommends \
           ca-certificates \
           curl \
+          docker.io \
           git \
           snapd \
           tar \
@@ -339,6 +340,7 @@ jobs:
           snap install aws-cli --classic
         fi
 
+        systemctl enable --now docker.service
         systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service
         ln -sf /snap/bin/aws /usr/bin/aws
 
