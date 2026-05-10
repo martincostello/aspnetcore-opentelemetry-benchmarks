@@ -143,6 +143,8 @@ jobs:
           --tags "file://${tagsPath}" `
           --output json | Out-Null
 
+        Write-Host "Created IAM role ${env:INSTANCE_ROLE_NAME}."
+
     - name: Attach SSM policy to EC2 instance role
       shell: pwsh
       env:
@@ -193,6 +195,8 @@ jobs:
           --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
           --tags "file://${tagsPath}" `
           --output json | Out-Null
+
+        Write-Host "Created instance profile ${env:INSTANCE_PROFILE_NAME}."
 
         aws iam add-role-to-instance-profile `
           --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
@@ -283,6 +287,8 @@ jobs:
           --tag-specifications "ResourceType=security-group,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=benchmarking,Value=true}]" `
           --query "GroupId" `
           --output text
+
+        Write-Host "Created security group ${env:SECURITY_GROUP_NAME} (${securityGroupId})."
 
         "security-group-id=${securityGroupId}" >> ${env:GITHUB_OUTPUT}
 
@@ -532,6 +538,8 @@ jobs:
           --user-data "file://${userDataPath}" `
           --query "Instances[0].InstanceId" `
           --output text
+
+        Write-Host "Created EC2 instance ${instanceId}."
 
         "instance-id=${instanceId}" >> ${env:GITHUB_OUTPUT}
         "s3-object-key=${s3ObjectKey}" >> ${env:GITHUB_OUTPUT}
