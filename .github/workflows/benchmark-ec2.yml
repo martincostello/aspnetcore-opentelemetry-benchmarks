@@ -517,18 +517,21 @@ jobs:
         aws ec2 wait instance-status-ok --instance-ids ${env:INSTANCE_ID}
         Write-Output "EC2 instance ${env:INSTANCE_ID} passed status checks."
 
+        function Write-PollMessage([string] $Message) {
+          $timestamp = [DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          Write-Output "[${timestamp}] ${Message}"
+        }
+
         $deadline = [DateTime]::UtcNow.AddMinutes(10)
-        $pollCount = 0
         $ready = $false
 
         while ([DateTime]::UtcNow -lt $deadline) {
-          $pollCount++
           $managed = aws ssm describe-instance-information `
             --filters "Key=InstanceIds,Values=${env:INSTANCE_ID}" `
             --query "InstanceInformationList[0].PingStatus" `
             --output text
 
-          Write-Output "Bootstrap poll ${pollCount}: SSM ping status is '${managed}'."
+          Write-PollMessage "Bootstrap SSM ping status is '${managed}'."
 
           if ($managed -eq "Online") {
             $commandId = aws ssm send-command `
@@ -547,7 +550,7 @@ jobs:
               --query "Status" `
               --output text
 
-            Write-Output "Bootstrap poll ${pollCount}: bootstrap probe status is '${status}'."
+            Write-PollMessage "Bootstrap probe status is '${status}'."
 
             if ($status -eq "Success") {
               $probeOutput = aws ssm get-command-invocation `
@@ -557,7 +560,7 @@ jobs:
                 --output text
 
               $probeOutput = $probeOutput.Trim()
-              Write-Output "Bootstrap poll ${pollCount}: bootstrap probe output is '${probeOutput}'."
+              Write-PollMessage "Bootstrap probe output is '${probeOutput}'."
 
               if ($probeOutput.StartsWith("ready")) {
                 $ready = $true
@@ -582,7 +585,7 @@ jobs:
             }
           }
           else {
-            Write-Output "Bootstrap poll ${pollCount}: waiting for the instance to come online in SSM."
+            Write-PollMessage "Waiting for the instance to come online in SSM."
           }
 
           Start-Sleep -Seconds 10
@@ -652,6 +655,11 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
 
+        function Write-PollMessage([string] $Message) {
+          $timestamp = [DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          Write-Output "[${timestamp}] ${Message}"
+        }
+
         $completed = $false
         $failedStatuses = @("Cancelled", "Cancelling", "Failed", "TimedOut", "Undeliverable", "Terminated")
 
@@ -663,12 +671,12 @@ jobs:
             --output text 2>$null
 
           if (($LASTEXITCODE -ne 0) -or [string]::IsNullOrWhiteSpace($status) -or ($status -eq "None")) {
-            Write-Output "Benchmark poll ${pollCount}: waiting for the SSM command invocation to become available."
+            Write-PollMessage "Waiting for the SSM command invocation to become available."
             Start-Sleep -Seconds 10
             continue
           }
 
-          Write-Output "Benchmark poll ${pollCount}: benchmark command status is '${status}'."
+          Write-PollMessage "Benchmark command status is '${status}'."
 
           if ($status -eq "Success") {
             $stdout = aws ssm get-command-invocation `
