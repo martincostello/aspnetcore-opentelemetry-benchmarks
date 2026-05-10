@@ -794,7 +794,7 @@ jobs:
         }
 
         Write-Output "Terminating EC2 instance ${env:INSTANCE_ID}."
-        aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
+        aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --skip-os-shutdown --output json | Out-Null
 
 
     - name: Wait for EC2 instance termination
@@ -925,7 +925,7 @@ jobs:
           --output text 2>$null
 
         if (($LASTEXITCODE -eq 0) -and ($state -notin @("shutting-down", "terminated"))) {
-          aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
+          aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --skip-os-shutdown --output json | Out-Null
           aws ec2 wait instance-terminated --instance-ids ${env:INSTANCE_ID}
         }
 
