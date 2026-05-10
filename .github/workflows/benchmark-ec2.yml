@@ -27,6 +27,10 @@ jobs:
     timeout-minutes: 60
     if: github.event.repository.fork == false
 
+    concurrency:
+      group: benchmark-ec2
+      cancel-in-progress: false
+
     env:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ vars.AWS_REGION }}
