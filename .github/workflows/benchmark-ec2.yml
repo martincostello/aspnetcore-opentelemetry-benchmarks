@@ -632,7 +632,7 @@ jobs:
           throw "The EC2 instance did not finish bootstrapping in time."
         }
 
-    - name: Terminate EC2 instance if bootstrap wait is cancelled
+    - name: Terminate EC2 instance
       if: ${{ (cancelled() || failure()) && steps.launch-instance.outputs.instance-id != '' }}
       shell: pwsh
       env:
