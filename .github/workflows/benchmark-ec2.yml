@@ -1,7 +1,6 @@
 name: benchmark-ec2
 
 on:
-  pull_request: # TODO Remove before merging
   workflow_dispatch:
 
 permissions: {}
