@@ -315,6 +315,7 @@ jobs:
         $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
         $runNumberTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_NUMBER}
         $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+        $instanceNameTagValue = Convert-ToAwsTagValue "${env:GITHUB_REPOSITORY}#${env:GITHUB_RUN_NUMBER}@${env:GITHUB_RUN_ATTEMPT}"
         $createdAtTagValue = Convert-ToAwsTagValue $createdAt
 
         $userDataTemplate = @'
@@ -496,7 +497,7 @@ jobs:
           --metadata-options "HttpEndpoint=enabled,HttpTokens=required" `
           --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=${env:SUBNET_ID},Groups=${env:SECURITY_GROUP_ID},DeleteOnTermination=true" `
           --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"DeleteOnTermination":true,"VolumeSize":16,"VolumeType":"gp3"}}]' `
-          --tag-specifications "ResourceType=instance,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
+          --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${instanceNameTagValue}},{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
           --user-data "file://${userDataPath}" `
           --query "Instances[0].InstanceId" `
           --output text
