@@ -147,7 +147,7 @@ jobs:
           --tags "file://${tagsPath}" `
           --output json | Out-Null
 
-        Write-Host "Created IAM role ${env:INSTANCE_ROLE_NAME}."
+        Write-Output "Created IAM role ${env:INSTANCE_ROLE_NAME}."
 
     - name: Attach SSM policy to EC2 instance role
       shell: pwsh
@@ -200,7 +200,7 @@ jobs:
           --tags "file://${tagsPath}" `
           --output json | Out-Null
 
-        Write-Host "Created instance profile ${env:INSTANCE_PROFILE_NAME}."
+        Write-Output "Created instance profile ${env:INSTANCE_PROFILE_NAME}."
 
         aws iam add-role-to-instance-profile `
           --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
@@ -292,7 +292,7 @@ jobs:
           --query "GroupId" `
           --output text
 
-        Write-Host "Created security group ${env:SECURITY_GROUP_NAME} (${securityGroupId})."
+        Write-Output "Created security group ${env:SECURITY_GROUP_NAME} (${securityGroupId})."
 
         "security-group-id=${securityGroupId}" >> ${env:GITHUB_OUTPUT}
 
@@ -311,22 +311,25 @@ jobs:
         }
 
         $createdAt = [DateTime]::UtcNow.ToString("O")
-        $s3ObjectKey = "${env:GITHUB_REPOSITORY}/${env:GITHUB_SHA}.zip"
+        $s3ObjectKey = "${env:GITHUB_REPOSITORY}/${env:GITHUB_RUN_ID}-${env:GITHUB_RUN_ATTEMPT}-${env:GITHUB_SHA}.zip"
         $statusObjectKey = "${s3ObjectKey}.status.json"
         $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
         $gitShaTagValue = Convert-ToAwsTagValue ${env:GITHUB_SHA}
         $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runNumberTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_NUMBER}
         $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
         $createdAtTagValue = Convert-ToAwsTagValue $createdAt
 
         $userDataTemplate = @'
         #!/bin/bash
         set -euxo pipefail
+        exec > >(tee /var/log/benchmark-bootstrap.log /dev/console) 2>&1
 
         export DEBIAN_FRONTEND=noninteractive
         apt-get update
         apt-get upgrade -y
         apt-get install -y --no-install-recommends \
+          autoconf \
           build-essential \
           ca-certificates \
           curl \
@@ -538,12 +541,12 @@ jobs:
           --metadata-options "HttpEndpoint=enabled,HttpTokens=required" `
           --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=${env:SUBNET_ID},Groups=${env:SECURITY_GROUP_ID},DeleteOnTermination=true" `
           --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"DeleteOnTermination":true,"VolumeSize":16,"VolumeType":"gp3"}}]' `
-          --tag-specifications "ResourceType=instance,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
+          --tag-specifications "ResourceType=instance,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
           --user-data "file://${userDataPath}" `
           --query "Instances[0].InstanceId" `
           --output text
 
-        Write-Host "Created EC2 instance ${instanceId}."
+        Write-Output "Created EC2 instance ${instanceId}."
 
         "instance-id=${instanceId}" >> ${env:GITHUB_OUTPUT}
         "s3-object-key=${s3ObjectKey}" >> ${env:GITHUB_OUTPUT}
@@ -559,14 +562,18 @@ jobs:
         aws ec2 wait instance-running --instance-ids ${env:INSTANCE_ID}
         aws ec2 wait instance-status-ok --instance-ids ${env:INSTANCE_ID}
 
-        $deadline = [DateTime]::UtcNow.AddMinutes(20)
+        $deadline = [DateTime]::UtcNow.AddMinutes(10)
+        $pollCount = 0
         $ready = $false
 
         while ([DateTime]::UtcNow -lt $deadline) {
+          $pollCount++
           $managed = aws ssm describe-instance-information `
             --filters "Key=InstanceIds,Values=${env:INSTANCE_ID}" `
             --query "InstanceInformationList[0].PingStatus" `
             --output text
+
+          Write-Output "Bootstrap poll ${pollCount}: SSM ping status is '${managed}'."
 
           if ($managed -eq "Online") {
             $commandId = aws ssm send-command `
@@ -585,16 +592,37 @@ jobs:
               --query "Status" `
               --output text
 
+            Write-Output "Bootstrap poll ${pollCount}: bootstrap probe status is '${status}'."
+
             if ($status -eq "Success") {
               $ready = $true
               break
             }
           }
+          else {
+            Write-Output "Bootstrap poll ${pollCount}: waiting for the instance to come online in SSM."
+          }
 
-          Start-Sleep -Seconds 15
+          Start-Sleep -Seconds 10
         }
 
         if (-Not $ready) {
+          Write-Output "The EC2 instance did not finish bootstrapping in time. Attempting to download the latest console output."
+
+          $consoleOutput = aws ec2 get-console-output `
+            --instance-id ${env:INSTANCE_ID} `
+            --latest `
+            --query "Output" `
+            --output text 2>$null
+
+          if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
+            Set-Content -Path $consoleOutputPath -Value $consoleOutput
+            Write-Output "Saved EC2 console output to ${consoleOutputPath}."
+          }
+          else {
+            Write-Output "EC2 console output was not available."
+          }
+
           throw "The EC2 instance did not finish bootstrapping in time."
         }
 
@@ -636,6 +664,7 @@ jobs:
 
     - name: Wait for EC2 instance termination
       if: ${{ always() && steps.launch-instance.outputs.instance-id != '' }}
+      continue-on-error: true
       shell: pwsh
       env:
         INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
@@ -644,7 +673,7 @@ jobs:
         aws ec2 wait instance-terminated --instance-ids ${env:INSTANCE_ID}
 
     - name: Download benchmark artifacts
-      if: ${{ always() }}
+      if: ${{ always() && (steps.launch-instance.outputs.s3-object-key != '' || steps.launch-instance.outputs.status-object-key != '') }}
       shell: pwsh
       env:
         S3_OBJECT_KEY: ${{ steps.launch-instance.outputs.s3-object-key }}
@@ -658,8 +687,19 @@ jobs:
 
         New-Item -Path $artifactsDir -ItemType Directory -Force | Out-Null
 
-        aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" $zipPath --region ${env:AWS_REGION} --only-show-errors 2>$null
-        aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors 2>$null
+        if (-Not [string]::IsNullOrWhiteSpace(${env:S3_OBJECT_KEY})) {
+          aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" $zipPath --region ${env:AWS_REGION} --only-show-errors 2>$null
+          if (($LASTEXITCODE -ne 0) -and -Not (Test-Path $zipPath)) {
+            Write-Output "Benchmark ZIP could not be downloaded from S3."
+          }
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:STATUS_OBJECT_KEY})) {
+          aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors 2>$null
+          if (($LASTEXITCODE -ne 0) -and -Not (Test-Path $statusPath)) {
+            Write-Output "Benchmark status file could not be downloaded from S3."
+          }
+        }
 
         if (Test-Path $zipPath) {
           Expand-Archive -Path $zipPath -DestinationPath $artifactsDir -Force
@@ -674,15 +714,27 @@ jobs:
         if-no-files-found: error
 
     - name: Delete uploaded artifacts from S3
-      if: ${{ success() && !cancelled() && steps.launch-instance.outputs.s3-object-key != '' }}
+      if: ${{ always() && (steps.launch-instance.outputs.s3-object-key != '' || steps.launch-instance.outputs.status-object-key != '') }}
       shell: pwsh
       env:
         S3_OBJECT_KEY: ${{ steps.launch-instance.outputs.s3-object-key }}
         STATUS_OBJECT_KEY: ${{ steps.launch-instance.outputs.status-object-key }}
       run: |
-        $ErrorActionPreference = "Stop"
-        aws s3 rm "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" --region ${env:AWS_REGION} --only-show-errors
-        aws s3 rm "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" --region ${env:AWS_REGION} --only-show-errors
+        $ErrorActionPreference = "Continue"
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:S3_OBJECT_KEY})) {
+          aws s3 rm "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" --region ${env:AWS_REGION} --only-show-errors 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Deleted S3 object ${env:S3_OBJECT_KEY}."
+          }
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:STATUS_OBJECT_KEY})) {
+          aws s3 rm "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" --region ${env:AWS_REGION} --only-show-errors 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Deleted S3 object ${env:STATUS_OBJECT_KEY}."
+          }
+        }
 
     - name: Output summary
       if: ${{ always() }}
@@ -742,7 +794,7 @@ jobs:
           for ($i = 0; $i -lt 12; $i++) {
             aws ec2 delete-security-group --group-id ${env:SECURITY_GROUP_ID} 2>$null
             if ($LASTEXITCODE -eq 0) {
-              Write-Host "Deleted security group ${env:SECURITY_GROUP_ID}."
+              Write-Output "Deleted security group ${env:SECURITY_GROUP_ID}."
               break
             }
             Start-Sleep -Seconds 10
@@ -761,7 +813,7 @@ jobs:
           for ($i = 0; $i -lt 12; $i++) {
             aws iam delete-instance-profile --instance-profile-name ${env:INSTANCE_PROFILE_NAME} 2>$null
             if ($LASTEXITCODE -eq 0) {
-              Write-Host "Deleted instance profile ${env:INSTANCE_PROFILE_NAME}."
+              Write-Output "Deleted instance profile ${env:INSTANCE_PROFILE_NAME}."
               break
             }
             Start-Sleep -Seconds 10
@@ -782,7 +834,7 @@ jobs:
           for ($i = 0; $i -lt 12; $i++) {
             aws iam delete-role --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
             if ($LASTEXITCODE -eq 0) {
-              Write-Host "Deleted role ${env:INSTANCE_ROLE_NAME}."
+              Write-Output "Deleted role ${env:INSTANCE_ROLE_NAME}."
               break
             }
             Start-Sleep -Seconds 10
