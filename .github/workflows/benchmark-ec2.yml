@@ -470,7 +470,6 @@ jobs:
         '@
 
         $userData = $userDataTemplate.
-          Replace("__EC2_ARCHITECTURE__", ${env:EC2_ARCHITECTURE}).
           Replace("__GITHUB_SHA__", ${env:GITHUB_SHA}).
           Replace("__GITHUB_REPOSITORY__", ${env:GITHUB_REPOSITORY})
 
@@ -599,8 +598,8 @@ jobs:
             --output text 2>$null
 
           if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
-            Set-Content -Path $consoleOutputPath -Value $consoleOutput
-            Write-Output "Saved EC2 console output to ${consoleOutputPath}."
+            Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
+            Write-Output $consoleOutput
           }
           else {
             Write-Output "EC2 console output was not available."
@@ -785,7 +784,7 @@ jobs:
           Write-Output "EC2 console output was not available before termination."
         }
 
-        Write-Output "Benchmarks did not complete successfully. Terminating EC2 instance ${env:INSTANCE_ID}."
+        Write-Output "Terminating EC2 instance ${env:INSTANCE_ID}."
         aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
 
 
@@ -815,16 +814,22 @@ jobs:
         New-Item -Path $artifactsDir -ItemType Directory -Force | Out-Null
 
         if (-Not [string]::IsNullOrWhiteSpace(${env:S3_OBJECT_KEY})) {
-          aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" $zipPath --region ${env:AWS_REGION} --only-show-errors 2>$null
+          $zipError = aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" $zipPath --region ${env:AWS_REGION} --only-show-errors 2>&1
           if (($LASTEXITCODE -ne 0) -and -Not (Test-Path $zipPath)) {
             Write-Output "Benchmark ZIP could not be downloaded from S3."
+            if (-Not [string]::IsNullOrWhiteSpace($zipError)) {
+              Write-Output $zipError
+            }
           }
         }
 
         if (-Not [string]::IsNullOrWhiteSpace(${env:STATUS_OBJECT_KEY})) {
-          aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors 2>$null
+          $statusError = aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors 2>&1
           if (($LASTEXITCODE -ne 0) -and -Not (Test-Path $statusPath)) {
             Write-Output "Benchmark status file could not be downloaded from S3."
+            if (-Not [string]::IsNullOrWhiteSpace($statusError)) {
+              Write-Output $statusError
+            }
           }
         }
 
@@ -919,8 +924,8 @@ jobs:
       if: ${{ always() }}
       shell: pwsh
       env:
-        INSTANCE_PROFILE_NAME: ${{ steps.create-profile.outputs.instance-profile-name }}
-        INSTANCE_ROLE_NAME: ${{ steps.create-profile.outputs.instance-role-name }}
+        INSTANCE_PROFILE_NAME: ${{ steps.resource-names.outputs.instance-profile-name }}
+        INSTANCE_ROLE_NAME: ${{ steps.resource-names.outputs.instance-role-name }}
         SECURITY_GROUP_ID: ${{ steps.create-security-group.outputs.security-group-id }}
       run: |
         $ErrorActionPreference = "Continue"
@@ -942,9 +947,15 @@ jobs:
         }
 
         if (-Not [string]::IsNullOrWhiteSpace(${env:INSTANCE_PROFILE_NAME}) -and -Not [string]::IsNullOrWhiteSpace(${env:INSTANCE_ROLE_NAME})) {
-          aws iam remove-role-from-instance-profile `
-            --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
-            --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
+          for ($i = 0; $i -lt 12; $i++) {
+            aws iam remove-role-from-instance-profile `
+              --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
+              --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              break
+            }
+            Start-Sleep -Seconds 10
+          }
 
           for ($i = 0; $i -lt 12; $i++) {
             aws iam delete-instance-profile --instance-profile-name ${env:INSTANCE_PROFILE_NAME} 2>$null
