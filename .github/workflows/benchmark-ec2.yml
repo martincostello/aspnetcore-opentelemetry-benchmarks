@@ -560,7 +560,9 @@ jobs:
         $ErrorActionPreference = "Stop"
 
         aws ec2 wait instance-running --instance-ids ${env:INSTANCE_ID}
+        Write-Output "EC2 instance ${env:INSTANCE_ID} is running."
         aws ec2 wait instance-status-ok --instance-ids ${env:INSTANCE_ID}
+        Write-Output "EC2 instance ${env:INSTANCE_ID} passed status checks."
 
         $deadline = [DateTime]::UtcNow.AddMinutes(10)
         $pollCount = 0
