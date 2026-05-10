@@ -634,6 +634,28 @@ jobs:
           Write-Output "Benchmark poll ${pollCount}: benchmark command status is '${status}'."
 
           if ($status -eq "Success") {
+            $stdout = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "StandardOutputContent" `
+              --output text 2>$null
+
+            $stderr = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "StandardErrorContent" `
+              --output text 2>$null
+
+            if (-Not [string]::IsNullOrWhiteSpace($stdout) -and ($stdout -ne "None")) {
+              Write-Output "Benchmark command standard output:"
+              Write-Output $stdout
+            }
+
+            if (-Not [string]::IsNullOrWhiteSpace($stderr) -and ($stderr -ne "None")) {
+              Write-Output "Benchmark command standard error:"
+              Write-Output $stderr
+            }
+
             $completed = $true
             break
           }
@@ -777,7 +799,10 @@ jobs:
       if: ${{ !cancelled() }}
       with:
         name: benchmark-ec2-artifacts
-        path: ./BenchmarkDotNet.Artifacts/results/**/*
+        path: |
+          ./BenchmarkDotNet.Artifacts/results/**/*
+          ./BenchmarkDotNet.Artifacts/benchmark.log
+          ./BenchmarkDotNet.Artifacts/benchmark-status.json
         if-no-files-found: error
 
     - name: Delete uploaded artifacts from S3
