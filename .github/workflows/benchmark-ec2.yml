@@ -725,7 +725,7 @@ jobs:
           Write-Output "EC2 console output was not available before termination."
         }
 
-        Write-Output "Bootstrap did not complete successfully. Terminating EC2 instance ${env:INSTANCE_ID}."
+        Write-Output "Benchmarks did not complete successfully. Terminating EC2 instance ${env:INSTANCE_ID}."
         aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
 
 
