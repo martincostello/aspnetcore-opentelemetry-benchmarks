@@ -379,6 +379,7 @@ jobs:
         chmod 700 "${GNUPGHOME}"
         cat <<'AWSCLIKEY' | sed 's/^        //' > "aws-cli-public-key.asc"
         -----BEGIN PGP PUBLIC KEY BLOCK-----
+
         mQINBF2Cr7UBEADJZHcgusOJl7ENSyumXh85z0TRV0xJorM2B/JL0kHOyigQluUG
         ZMLhENaG0bYatdrKP+3H91lvK050pXwnO/R7fB/FSTouki4ciIx5OuLlnJZIxSzx
         PqGl0mkxImLNbGWoi6Lto0LYxqHN2iQtzlwTVmq9733zd3XfcXrZ3+LblHAgEt5G
