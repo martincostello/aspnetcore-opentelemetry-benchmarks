@@ -423,7 +423,7 @@ jobs:
         try {
           Push-Location $repoDir
           $locationPushed = $true
-          & ./benchmark.ps1 -Job Short *>&1 | Tee-Object -FilePath $logPath -Append
+          & ./benchmark.ps1 *>&1 | Tee-Object -FilePath $logPath -Append
         } catch {
           $_ | Out-String | Tee-Object -FilePath $logPath -Append | Out-Host
           $exitCode = 1
