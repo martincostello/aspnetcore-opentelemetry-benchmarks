@@ -10,6 +10,7 @@ using StackExchange.Redis;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("Docker")]
 [BenchmarkCategory("Redis")]
 public class RedisBenchmarks : Benchmarks, IScenario
 {

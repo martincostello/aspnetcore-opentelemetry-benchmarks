@@ -11,6 +11,7 @@ using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+[BenchmarkCategory("Docker")]
 [BenchmarkCategory("SQL")]
 public class SqlServerBenchmarks : Benchmarks, IScenario
 {
