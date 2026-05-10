@@ -783,7 +783,6 @@ jobs:
         }
 
     - name: Check benchmark result
-      if: ${{ always() }}
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
