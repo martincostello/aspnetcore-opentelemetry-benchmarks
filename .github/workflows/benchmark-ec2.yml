@@ -401,7 +401,7 @@ jobs:
         git fetch --depth 1 origin "__GITHUB_SHA__"
         git checkout --force "__GITHUB_SHA__"
 
-        cat > "${install_root}/run-benchmark.ps1" <<'POWERSHELL'
+        cat > "${install_root}/run-benchmark.ps1 -Job Short" <<'POWERSHELL'
         $ErrorActionPreference = "Stop"
 
         $workDir = "/opt/benchmark"
