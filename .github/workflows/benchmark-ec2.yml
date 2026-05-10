@@ -388,40 +388,35 @@ jobs:
             Pop-Location
           }
 
-          try {
-            if (Test-Path $stagingDir) {
-              Remove-Item -Path $stagingDir -Recurse -Force
-            }
-
-            New-Item -Path $stagingDir -ItemType Directory -Force | Out-Null
-
-            if (Test-Path $artifactsDir) {
-              Copy-Item -Path (Join-Path $artifactsDir "*") -Destination $stagingDir -Recurse -Force
-            }
-
-            $status = [ordered]@{
-              Repository = ${env:GITHUB_REPOSITORY}
-              Sha = ${env:GITHUB_SHA}
-              ExitCode = $exitCode
-              CompletedAtUtc = [DateTime]::UtcNow.ToString("O")
-            }
-
-            $status | ConvertTo-Json -Depth 5 | Set-Content -Path $statusPath
-            Copy-Item -Path $logPath -Destination $stagingDir -Force
-            Copy-Item -Path $statusPath -Destination $stagingDir -Force
-
-            if (Test-Path $zipPath) {
-              Remove-Item -Path $zipPath -Force
-            }
-
-            Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zipPath -Force
-
-            & aws s3 cp $zipPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:S3_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
-            & aws s3 cp $statusPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:STATUS_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
-          } finally {
-            # TODO Restore before merge
-            # & /usr/sbin/shutdown -h now
+          if (Test-Path $stagingDir) {
+            Remove-Item -Path $stagingDir -Recurse -Force
           }
+
+          New-Item -Path $stagingDir -ItemType Directory -Force | Out-Null
+
+          if (Test-Path $artifactsDir) {
+            Copy-Item -Path (Join-Path $artifactsDir "*") -Destination $stagingDir -Recurse -Force
+          }
+
+          $status = [ordered]@{
+            Repository = ${env:GITHUB_REPOSITORY}
+            Sha = ${env:GITHUB_SHA}
+            ExitCode = $exitCode
+            CompletedAtUtc = [DateTime]::UtcNow.ToString("O")
+          }
+
+          $status | ConvertTo-Json -Depth 5 | Set-Content -Path $statusPath
+          Copy-Item -Path $logPath -Destination $stagingDir -Force
+          Copy-Item -Path $statusPath -Destination $stagingDir -Force
+
+          if (Test-Path $zipPath) {
+            Remove-Item -Path $zipPath -Force
+          }
+
+          Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zipPath -Force
+
+          & aws s3 cp $zipPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:S3_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
+          & aws s3 cp $statusPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:STATUS_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
         }
 
         exit $exitCode
