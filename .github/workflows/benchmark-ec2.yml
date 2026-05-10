@@ -8,6 +8,7 @@ permissions: {}
 
 env:
   AMI_VERSION: 'ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-'
+  EC2_AMI_ARCHITECTURE: 'amd64'
   EC2_ARCHITECTURE: 'x86_64'
   EC2_DOCKER_VOLUME_SIZE: '64'
   EC2_INSTANCE_TYPE: 'm7i.xlarge'
@@ -478,12 +479,12 @@ jobs:
 
         $imageId = aws ec2 describe-images `
           --owners "099720109477" `
-          --filters "Name=name,Values=${env:AMI_VERSION}${env:EC2_ARCHITECTURE}-server-*" "Name=architecture,Values=${env:EC2_ARCHITECTURE}" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" "Name=state,Values=available" `
+          --filters "Name=name,Values=${env:AMI_VERSION}${env:EC2_AMI_ARCHITECTURE}-server-*" "Name=architecture,Values=${env:EC2_ARCHITECTURE}" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" "Name=state,Values=available" `
           --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" `
           --output text
 
         if (($null -eq $imageId) -or ($imageId -eq "None")) {
-          throw "No image ID could be resolved for the AMI name prefix '${env:AMI_VERSION}${env:EC2_ARCHITECTURE}-server-'."
+          throw "No image ID could be resolved for the AMI name prefix '${env:AMI_VERSION}${env:EC2_AMI_ARCHITECTURE}-server-' with EC2 architecture '${env:EC2_ARCHITECTURE}'."
         }
 
         $instanceId = aws ec2 run-instances `
