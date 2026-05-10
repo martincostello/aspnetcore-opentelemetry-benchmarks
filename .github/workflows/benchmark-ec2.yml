@@ -497,7 +497,7 @@ jobs:
               --instance-ids ${env:INSTANCE_ID} `
               --document-name "AWS-RunShellScript" `
               --comment "Check benchmark bootstrap completion" `
-              --parameters '{"commands":["if [ -f /opt/benchmark/bootstrap-complete ]; then echo ready; else echo waiting; fi"]}' `
+              --parameters '{"commands":["cloud-init status --wait >/dev/null && if [ -f /opt/benchmark/bootstrap-complete ]; then echo ready; else echo incomplete; exit 1; fi"]}' `
               --query "Command.CommandId" `
               --output text
 
@@ -521,14 +521,26 @@ jobs:
               $probeOutput = $probeOutput.Trim()
               Write-Output "Bootstrap poll ${pollCount}: bootstrap probe output is '${probeOutput}'."
 
-              if ($probeOutput -eq "ready") {
+              if ($probeOutput.StartsWith("ready")) {
                 $ready = $true
                 break
               }
             }
 
             if ($status -eq "Failed") {
-              throw "The EC2 bootstrap probe failed."
+              $probeError = aws ssm get-command-invocation `
+                --command-id $commandId `
+                --instance-id ${env:INSTANCE_ID} `
+                --query "StandardErrorContent" `
+                --output text
+
+              $probeError = $probeError.Trim()
+
+              if ([string]::IsNullOrWhiteSpace($probeError)) {
+                throw "The EC2 bootstrap probe failed."
+              }
+
+              throw "The EC2 bootstrap probe failed: ${probeError}"
             }
           }
           else {
