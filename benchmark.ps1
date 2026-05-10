@@ -37,25 +37,37 @@ else {
     }
 }
 
-if ($installDotNetSdk -eq $true) {
+if ($installDotNetSdk) {
     ${env:DOTNET_INSTALL_DIR} = Join-Path $PSScriptRoot ".dotnet"
     $sdkPath = Join-Path ${env:DOTNET_INSTALL_DIR} "sdk" $dotnetVersion
 
-    if (!(Test-Path $sdkPath)) {
-        if (!(Test-Path ${env:DOTNET_INSTALL_DIR})) {
+    if (-Not (Test-Path $sdkPath)) {
+        if (-Not (Test-Path ${env:DOTNET_INSTALL_DIR})) {
             mkdir ${env:DOTNET_INSTALL_DIR} | Out-Null
         }
-        $installScript = Join-Path ${env:DOTNET_INSTALL_DIR} "install.ps1"
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor "Tls12"
-        Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile $installScript -UseBasicParsing
-        & $installScript -JsonFile $sdkFile -InstallDir ${env:DOTNET_INSTALL_DIR} -NoPath
+        if (($PSVersionTable.PSVersion.Major -ge 6) -And (-Not $IsWindows)) {
+            $installScript = Join-Path ${env:DOTNET_INSTALL_DIR} "install.sh"
+            Invoke-WebRequest "https://dot.net/v1/dotnet-install.sh" -OutFile $installScript -UseBasicParsing
+            chmod +x $installScript
+            & $installScript --jsonfile $sdkFile --install-dir ${env:DOTNET_INSTALL_DIR} --no-path --skip-non-versioned-files
+        }
+        else {
+            $installScript = Join-Path ${env:DOTNET_INSTALL_DIR} "install.ps1"
+            Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile $installScript -UseBasicParsing
+            & $installScript -JsonFile $sdkFile -InstallDir ${env:DOTNET_INSTALL_DIR} -NoPath -SkipNonVersionedFiles
+        }
     }
-
-    ${env:PATH} = "${env:DOTNET_INSTALL_DIR};${env:PATH}"
-    $dotnet = Join-Path ${env:DOTNET_INSTALL_DIR} "dotnet"
 }
 else {
-    $dotnet = "dotnet"
+    ${env:DOTNET_INSTALL_DIR} = Split-Path -Path (Get-Command dotnet).Path
+}
+
+$dotnet = Join-Path ${env:DOTNET_INSTALL_DIR} "dotnet"
+
+if ($installDotNetSdk) {
+    $separator = $IsWindows ? ";" : ":"
+    ${env:PATH} = "${env:DOTNET_INSTALL_DIR}${separator}${env:PATH}"
 }
 
 $benchmarks = (Join-Path $solutionPath "perf" "Benchmarks" "Benchmarks.csproj")
@@ -77,6 +89,11 @@ if (-Not [string]::IsNullOrEmpty($Job)) {
 if (-Not [string]::IsNullOrEmpty(${env:GITHUB_SHA})) {
     $additionalArgs += "--exporters"
     $additionalArgs += "json"
+}
+
+if ($installDotNetSdk) {
+    $additionalArgs += "--cli"
+    $additionalArgs += $dotnet
 }
 
 $dotnetArgs = @(

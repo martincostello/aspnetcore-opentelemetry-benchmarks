@@ -1,0 +1,1026 @@
+name: benchmark-ec2
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  AMI_VERSION: 'ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-'
+  EC2_AMI_ARCHITECTURE: 'amd64'
+  EC2_ARCHITECTURE: 'x86_64'
+  EC2_DOCKER_VOLUME_SIZE: '64'
+  EC2_INSTANCE_TYPE: 'm7i.xlarge'
+  EC2_ROOT_VOLUME_SIZE: '16'
+  FORCE_COLOR: 1
+  TERM: xterm
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    if: github.event.repository.fork == false
+
+    concurrency:
+      group: benchmark-ec2
+      cancel-in-progress: false
+
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      EC2_POLICY_NAME: ${{ vars.EC2_POLICY_NAME }}
+      EC2_INSTANCE_POLICY_ARN: ${{ format('arn:aws:iam::{0}:policy/{1}', secrets.AWS_ACCOUNT_ID, vars.EC2_POLICY_NAME) }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+
+    environment:
+      name: aws
+      deployment: false
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        filter: 'tree:0'
+        persist-credentials: false
+        show-progress: false
+
+    - name: Validate configuration
+      shell: pwsh
+      run: |
+        $required = @(
+          "AWS_ACCOUNT_ID"
+          "AWS_REGION"
+          "AWS_ROLE_TO_ASSUME"
+          "EC2_POLICY_NAME"
+          "EC2_INSTANCE_POLICY_ARN"
+          "S3_BUCKET_NAME"
+        )
+
+        foreach ($name in $required) {
+          if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+            throw "The ${name} environment variable must be configured."
+          }
+        }
+
+        if (${env:AWS_ACCOUNT_ID} -notmatch '^\d{12}$') {
+          throw "AWS_ACCOUNT_ID must be a 12-digit AWS account ID."
+        }
+
+        if (${env:EC2_INSTANCE_POLICY_ARN} -notmatch "^arn:aws:iam::${env:AWS_ACCOUNT_ID}:policy/.+$") {
+          throw "EC2_INSTANCE_POLICY_ARN is not valid for the configured AWS_ACCOUNT_ID."
+        }
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+      with:
+        aws-region: ${{ env.AWS_REGION }}
+        role-session-name: ${{ github.event.repository.name }}-${{ github.run_id }}-deploy-aws
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+
+    - name: Compute AWS resource names
+      id: resource-names
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $suffix = "${env:GITHUB_RUN_ID}-${env:GITHUB_RUN_ATTEMPT}"
+        $roleName = "gh-benchmark-${suffix}"
+        $instanceProfileName = $roleName
+
+        "instance-role-name=${roleName}" >> ${env:GITHUB_OUTPUT}
+        "instance-profile-name=${instanceProfileName}" >> ${env:GITHUB_OUTPUT}
+        "security-group-name=gh-benchmark-${suffix}-sg" >> ${env:GITHUB_OUTPUT}
+
+    - name: Create EC2 instance role
+      shell: pwsh
+      env:
+        INSTANCE_ROLE_NAME: ${{ steps.resource-names.outputs.instance-role-name }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
+        $trustPolicyPath = Join-Path ${env:RUNNER_TEMP} "trust-policy.json"
+        $tagsPath = Join-Path ${env:RUNNER_TEMP} "role-tags.json"
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+
+        $trustPolicy = @{
+          Version = "2012-10-17"
+          Statement = @(
+            @{
+              Effect = "Allow"
+              Principal = @{
+                Service = "ec2.amazonaws.com"
+              }
+              Action = "sts:AssumeRole"
+            }
+          )
+        }
+
+        $trustPolicy | ConvertTo-Json -Depth 10 | Set-Content -Path $trustPolicyPath
+        @(
+          @{ Key = "GitHubRepository"; Value = $repoTagValue }
+          @{ Key = "GitHubWorkflowRun"; Value = $runIdTagValue }
+          @{ Key = "GitHubWorkflowRunAttempt"; Value = $runAttemptTagValue }
+          @{ Key = "benchmarking"; Value = "true" }
+        ) | ConvertTo-Json -Depth 10 | Set-Content -Path $tagsPath
+
+        aws iam create-role `
+          --role-name ${env:INSTANCE_ROLE_NAME} `
+          --assume-role-policy-document "file://${trustPolicyPath}" `
+          --tags "file://${tagsPath}" `
+          --output json | Out-Null
+
+        Write-Output "Created IAM role ${env:INSTANCE_ROLE_NAME}."
+
+    - name: Attach SSM policy to EC2 instance role
+      shell: pwsh
+      env:
+        INSTANCE_ROLE_NAME: ${{ steps.resource-names.outputs.instance-role-name }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        aws iam attach-role-policy `
+          --role-name ${env:INSTANCE_ROLE_NAME} `
+          --policy-arn "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+    - name: Attach benchmark policy to instance role
+      shell: pwsh
+      env:
+        INSTANCE_ROLE_NAME: ${{ steps.resource-names.outputs.instance-role-name }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        aws iam attach-role-policy `
+          --role-name ${env:INSTANCE_ROLE_NAME} `
+          --policy-arn "${env:EC2_INSTANCE_POLICY_ARN}"
+
+    - name: Create EC2 instance profile
+      id: create-profile
+      shell: pwsh
+      env:
+        INSTANCE_PROFILE_NAME: ${{ steps.resource-names.outputs.instance-profile-name }}
+        INSTANCE_ROLE_NAME: ${{ steps.resource-names.outputs.instance-role-name }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
+        $tagsPath = Join-Path ${env:RUNNER_TEMP} "instance-profile-tags.json"
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+        @(
+          @{ Key = "GitHubRepository"; Value = $repoTagValue }
+          @{ Key = "GitHubWorkflowRun"; Value = $runIdTagValue }
+          @{ Key = "GitHubWorkflowRunAttempt"; Value = $runAttemptTagValue }
+          @{ Key = "benchmarking"; Value = "true" }
+        ) | ConvertTo-Json -Depth 10 | Set-Content -Path $tagsPath
+
+        aws iam create-instance-profile `
+          --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
+          --tags "file://${tagsPath}" `
+          --output json | Out-Null
+
+        Write-Output "Created instance profile ${env:INSTANCE_PROFILE_NAME}."
+
+        aws iam add-role-to-instance-profile `
+          --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
+          --role-name ${env:INSTANCE_ROLE_NAME}
+
+        "instance-role-name=${env:INSTANCE_ROLE_NAME}" >> ${env:GITHUB_OUTPUT}
+        "instance-profile-name=${env:INSTANCE_PROFILE_NAME}" >> ${env:GITHUB_OUTPUT}
+
+    - name: Wait for EC2 instance profile propagation
+      shell: pwsh
+      env:
+        INSTANCE_PROFILE_NAME: ${{ steps.create-profile.outputs.instance-profile-name }}
+        INSTANCE_ROLE_NAME: ${{ steps.create-profile.outputs.instance-role-name }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        aws iam wait instance-profile-exists --instance-profile-name ${env:INSTANCE_PROFILE_NAME}
+
+        $deadline = [DateTime]::UtcNow.AddMinutes(2)
+        $roleAttached = $false
+
+        while ([DateTime]::UtcNow -lt $deadline) {
+          $attachedRoleName = aws iam get-instance-profile `
+            --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
+            --query "InstanceProfile.Roles[0].RoleName" `
+            --output text 2>$null
+
+          if ($LASTEXITCODE -eq 0 -and $attachedRoleName -eq ${env:INSTANCE_ROLE_NAME}) {
+            $roleAttached = $true
+            break
+          }
+
+          Start-Sleep -Seconds 5
+        }
+
+        if (-Not $roleAttached) {
+          throw "The instance profile did not finish propagating in time."
+        }
+
+    - name: Discover default network
+      id: discover-network
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $vpcId = aws ec2 describe-vpcs `
+          --filters "Name=isDefault,Values=true" `
+          --query "Vpcs[0].VpcId" `
+          --output text
+
+        if (($null -eq $vpcId) -or ($vpcId -eq "None")) {
+          throw "No default VPC could be found."
+        }
+
+        $subnetId = aws ec2 describe-subnets `
+          --filters "Name=vpc-id,Values=$vpcId" "Name=default-for-az,Values=true" `
+          --query "Subnets[0].SubnetId" `
+          --output text
+
+        if (($null -eq $subnetId) -or ($subnetId -eq "None")) {
+          throw "No default subnet could be found."
+        }
+
+        "vpc-id=${vpcId}" >> ${env:GITHUB_OUTPUT}
+        "subnet-id=${subnetId}" >> ${env:GITHUB_OUTPUT}
+
+    - name: Create EC2 security group
+      id: create-security-group
+      shell: pwsh
+      env:
+        SECURITY_GROUP_NAME: ${{ steps.resource-names.outputs.security-group-name }}
+        VPC_ID: ${{ steps.discover-network.outputs.vpc-id }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+
+        $securityGroupId = aws ec2 create-security-group `
+          --group-name ${env:SECURITY_GROUP_NAME} `
+          --description "GitHub Actions benchmark instance ${env:GITHUB_RUN_ID}/${env:GITHUB_RUN_ATTEMPT}" `
+          --vpc-id ${env:VPC_ID} `
+          --tag-specifications "ResourceType=security-group,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=benchmarking,Value=true}]" `
+          --query "GroupId" `
+          --output text
+
+        Write-Output "Created security group ${env:SECURITY_GROUP_NAME} (${securityGroupId})."
+
+        "security-group-id=${securityGroupId}" >> ${env:GITHUB_OUTPUT}
+
+    - name: Launch EC2 instance
+      id: launch-instance
+      shell: pwsh
+      env:
+        INSTANCE_PROFILE_NAME: ${{ steps.create-profile.outputs.instance-profile-name }}
+        SECURITY_GROUP_ID: ${{ steps.create-security-group.outputs.security-group-id }}
+        SUBNET_ID: ${{ steps.discover-network.outputs.subnet-id }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
+        $createdAt = [DateTime]::UtcNow.ToString("O")
+        $s3ObjectKey = "${env:GITHUB_REPOSITORY}/${env:GITHUB_RUN_ID}-${env:GITHUB_RUN_ATTEMPT}-${env:GITHUB_SHA}.zip"
+        $statusObjectKey = "${s3ObjectKey}.status.json"
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $gitShaTagValue = Convert-ToAwsTagValue ${env:GITHUB_SHA}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runNumberTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_NUMBER}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+        $instanceNameTagValue = Convert-ToAwsTagValue "${env:GITHUB_REPOSITORY}#${env:GITHUB_RUN_NUMBER}@${env:GITHUB_RUN_ATTEMPT}"
+        $createdAtTagValue = Convert-ToAwsTagValue $createdAt
+
+        $userDataTemplate = @'
+        #!/bin/bash
+        set -euxo pipefail
+        exec > >(tee /var/log/benchmark-bootstrap.log /dev/console) 2>&1
+
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get upgrade -y
+        apt-get install -y --no-install-recommends \
+          ca-certificates \
+          curl \
+          docker.io \
+          git \
+          snapd \
+          tar \
+          unzip \
+          zip
+
+        if ! snap list amazon-ssm-agent >/dev/null 2>&1; then
+          snap install amazon-ssm-agent --classic
+        fi
+
+        if ! snap list aws-cli >/dev/null 2>&1; then
+          snap install aws-cli --classic
+        fi
+
+        docker_data_root="/mnt/docker-data"
+        root_source="$(realpath "$(findmnt -n -o SOURCE /)")"
+        root_disk="/dev/$(lsblk -no PKNAME "${root_source}")"
+        docker_disk="$(lsblk -dn -o NAME,TYPE | awk '$2 == "disk" { print "/dev/" $1 }' | grep -vx "${root_disk}" | head -n1)"
+
+        if [ -z "${docker_disk}" ]; then
+          echo "Failed to identify the Docker data disk." >&2
+          exit 1
+        fi
+
+        if ! blkid "${docker_disk}" >/dev/null 2>&1; then
+          mkfs.ext4 -F "${docker_disk}"
+        fi
+
+        mkdir -p "${docker_data_root}"
+        mount "${docker_disk}" "${docker_data_root}"
+
+        docker_uuid="$(blkid -s UUID -o value "${docker_disk}")"
+        if ! grep -q "${docker_uuid}" /etc/fstab; then
+          echo "UUID=${docker_uuid} ${docker_data_root} ext4 defaults,nofail 0 2" >> /etc/fstab
+        fi
+
+        systemctl stop docker.service docker.socket containerd.service 2>/dev/null || true
+
+        mkdir -p "${docker_data_root}/docker" "${docker_data_root}/containerd"
+        rm -rf /var/lib/docker /var/lib/containerd
+        ln -sfn "${docker_data_root}/docker" /var/lib/docker
+        ln -sfn "${docker_data_root}/containerd" /var/lib/containerd
+
+        mkdir -p /etc/containerd /etc/docker
+        containerd config default > /etc/containerd/config.toml
+        sed -i 's#^root = .*$#root = "/mnt/docker-data/containerd"#' /etc/containerd/config.toml
+
+        cat > /etc/docker/daemon.json <<'DOCKER'
+        {
+          "data-root": "/mnt/docker-data/docker"
+        }
+        DOCKER
+
+        systemctl enable --now containerd.service docker.service
+        systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service
+        ln -sf /snap/bin/aws /usr/bin/aws
+
+        install_root="/opt/benchmark"
+        repo_dir="${install_root}/repo"
+
+        mkdir -p "${install_root}"
+        cd /tmp
+
+        if ! snap list powershell >/dev/null 2>&1; then
+          snap install powershell --classic
+        fi
+
+        ln -sf /snap/bin/pwsh /usr/bin/pwsh
+
+        git clone --filter=tree:0 "https://github.com/__GITHUB_REPOSITORY__.git" "${repo_dir}"
+        cd "${repo_dir}"
+        git fetch --depth 1 origin "__GITHUB_SHA__"
+        git checkout --force "__GITHUB_SHA__"
+
+        cat > "${install_root}/run-benchmark.ps1" <<'POWERSHELL'
+        $ErrorActionPreference = "Stop"
+
+        $workDir = "/opt/benchmark"
+        $repoDir = Join-Path $workDir "repo"
+        $artifactsDir = Join-Path $repoDir "BenchmarkDotNet.Artifacts"
+        $logPath = Join-Path $workDir "benchmark.log"
+        $statusPath = Join-Path $workDir "benchmark-status.json"
+        $zipPath = Join-Path $workDir "benchmark-artifacts.zip"
+        $stagingDir = Join-Path $workDir "bundle"
+        $exitCode = 0
+        $locationPushed = $false
+
+        if (Test-Path $logPath) {
+          Remove-Item -Path $logPath -Force
+        }
+
+        try {
+          Push-Location $repoDir
+          $locationPushed = $true
+          & ./benchmark.ps1 *>&1 | Tee-Object -FilePath $logPath -Append
+        } catch {
+          $_ | Out-String | Tee-Object -FilePath $logPath -Append | Out-Host
+          $exitCode = 1
+        } finally {
+          if ($locationPushed) {
+            Pop-Location
+          }
+
+          if (Test-Path $stagingDir) {
+            Remove-Item -Path $stagingDir -Recurse -Force
+          }
+
+          New-Item -Path $stagingDir -ItemType Directory -Force | Out-Null
+
+          if (Test-Path $artifactsDir) {
+            Copy-Item -Path (Join-Path $artifactsDir "*") -Destination $stagingDir -Recurse -Force
+          }
+
+          $status = [ordered]@{
+            Repository = ${env:GITHUB_REPOSITORY}
+            Sha = ${env:GITHUB_SHA}
+            ExitCode = $exitCode
+            CompletedAtUtc = [DateTime]::UtcNow.ToString("O")
+          }
+
+          $status | ConvertTo-Json -Depth 5 | Set-Content -Path $statusPath
+          Copy-Item -Path $logPath -Destination $stagingDir -Force
+          Copy-Item -Path $statusPath -Destination $stagingDir -Force
+
+          if (Test-Path $zipPath) {
+            Remove-Item -Path $zipPath -Force
+          }
+
+          Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zipPath -Force
+
+          & aws s3 cp $zipPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:S3_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
+          & aws s3 cp $statusPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:STATUS_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
+        }
+
+        exit $exitCode
+        POWERSHELL
+
+        chmod +x "${install_root}/run-benchmark.ps1"
+        touch "${install_root}/bootstrap-complete"
+        '@
+
+        $userData = $userDataTemplate.
+          Replace("__GITHUB_SHA__", ${env:GITHUB_SHA}).
+          Replace("__GITHUB_REPOSITORY__", ${env:GITHUB_REPOSITORY})
+
+        $userDataPath = Join-Path ${env:RUNNER_TEMP} "user-data.sh"
+        Set-Content -Path $userDataPath -Value $userData -NoNewline
+
+        $imageId = aws ec2 describe-images `
+          --owners "099720109477" `
+          --filters "Name=name,Values=${env:AMI_VERSION}${env:EC2_AMI_ARCHITECTURE}-server-*" "Name=architecture,Values=${env:EC2_ARCHITECTURE}" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" "Name=state,Values=available" `
+          --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" `
+          --output text
+
+        if (($null -eq $imageId) -or ($imageId -eq "None")) {
+          throw "No image ID could be resolved for the AMI name prefix '${env:AMI_VERSION}${env:EC2_AMI_ARCHITECTURE}-server-' with EC2 architecture '${env:EC2_ARCHITECTURE}'."
+        }
+
+        $instanceId = aws ec2 run-instances `
+          --image-id $imageId `
+          --instance-type "${env:EC2_INSTANCE_TYPE}" `
+          --iam-instance-profile "Name=${env:INSTANCE_PROFILE_NAME}" `
+          --instance-initiated-shutdown-behavior "terminate" `
+          --metadata-options "HttpEndpoint=enabled,HttpTokens=required" `
+          --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=${env:SUBNET_ID},Groups=${env:SECURITY_GROUP_ID},DeleteOnTermination=true" `
+          --block-device-mappings "[{`"DeviceName`":`"/dev/xvda`",`"Ebs`":{`"DeleteOnTermination`":true,`"VolumeSize`":${env:EC2_ROOT_VOLUME_SIZE},`"VolumeType`":`"gp3`"}},{`"DeviceName`":`"/dev/sdf`",`"Ebs`":{`"DeleteOnTermination`":true,`"VolumeSize`":${env:EC2_DOCKER_VOLUME_SIZE},`"VolumeType`":`"gp3`"}}]" `
+          --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${instanceNameTagValue}},{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
+          --user-data "file://${userDataPath}" `
+          --query "Instances[0].InstanceId" `
+          --output text
+
+        Write-Output "Created EC2 instance ${instanceId}."
+
+        "instance-id=${instanceId}" >> ${env:GITHUB_OUTPUT}
+        "s3-object-key=${s3ObjectKey}" >> ${env:GITHUB_OUTPUT}
+        "status-object-key=${statusObjectKey}" >> ${env:GITHUB_OUTPUT}
+
+    - name: Wait for EC2 instance bootstrap
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        aws ec2 wait instance-running --instance-ids ${env:INSTANCE_ID}
+        Write-Output "EC2 instance ${env:INSTANCE_ID} is running."
+        aws ec2 wait instance-status-ok --instance-ids ${env:INSTANCE_ID}
+        Write-Output "EC2 instance ${env:INSTANCE_ID} passed status checks."
+
+        function Write-PollMessage([string] $Message) {
+          $timestamp = [DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          Write-Output "[${timestamp}] ${Message}"
+        }
+
+        $deadline = [DateTime]::UtcNow.AddMinutes(5)
+        $ready = $false
+
+        while ([DateTime]::UtcNow -lt $deadline) {
+          $managed = aws ssm describe-instance-information `
+            --filters "Key=InstanceIds,Values=${env:INSTANCE_ID}" `
+            --query "InstanceInformationList[0].PingStatus" `
+            --output text
+
+          Write-PollMessage "Bootstrap SSM ping status is '${managed}'."
+
+          if ($managed -eq "Online") {
+            $commandId = aws ssm send-command `
+              --instance-ids ${env:INSTANCE_ID} `
+              --document-name "AWS-RunShellScript" `
+              --comment "Check benchmark bootstrap completion" `
+              --parameters '{"commands":["cloud-init status --wait >/dev/null && if [ -f /opt/benchmark/bootstrap-complete ]; then echo ready; else echo incomplete; exit 1; fi"]}' `
+              --query "Command.CommandId" `
+              --output text
+
+            Start-Sleep -Seconds 5
+
+            $status = aws ssm get-command-invocation `
+              --command-id $commandId `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "Status" `
+              --output text
+
+            Write-PollMessage "Bootstrap probe status is '${status}'."
+
+            if ($status -eq "Success") {
+              $probeOutput = aws ssm get-command-invocation `
+                --command-id $commandId `
+                --instance-id ${env:INSTANCE_ID} `
+                --query "StandardOutputContent" `
+                --output text
+
+              $probeOutput = $probeOutput.Trim()
+              Write-PollMessage "Bootstrap probe output is '${probeOutput}'."
+
+              if ($probeOutput.StartsWith("ready")) {
+                $ready = $true
+                break
+              }
+            }
+
+            if ($status -eq "Failed") {
+              $probeError = aws ssm get-command-invocation `
+                --command-id $commandId `
+                --instance-id ${env:INSTANCE_ID} `
+                --query "StandardErrorContent" `
+                --output text
+
+              $probeError = $probeError.Trim()
+
+              if ([string]::IsNullOrWhiteSpace($probeError)) {
+                throw "The EC2 bootstrap probe failed."
+              }
+
+              throw "The EC2 bootstrap probe failed: ${probeError}"
+            }
+          }
+          else {
+            Write-PollMessage "Waiting for the instance to come online in SSM."
+          }
+
+          Start-Sleep -Seconds 10
+        }
+
+        if (-Not $ready) {
+          Write-Output "The EC2 instance did not finish bootstrapping in time. Attempting to download the latest console output."
+
+          $consoleOutput = aws ec2 get-console-output `
+            --instance-id ${env:INSTANCE_ID} `
+            --latest `
+            --query "Output" `
+            --output text 2>$null
+
+          if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
+            Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
+            Write-Output $consoleOutput
+          }
+          else {
+            Write-Output "EC2 console output was not available."
+          }
+
+          throw "The EC2 instance did not finish bootstrapping in time."
+        }
+
+    - name: Run benchmarks
+      id: start-benchmark
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+        S3_OBJECT_KEY: ${{ steps.launch-instance.outputs.s3-object-key }}
+        STATUS_OBJECT_KEY: ${{ steps.launch-instance.outputs.status-object-key }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $commands = @{
+          commands = @(
+            "export AWS_REGION='${env:AWS_REGION}'"
+            "export DOTNET_CLI_TELEMETRY_OPTOUT='true'"
+            "export DOTNET_NOLOGO='true'"
+            "export GITHUB_REPOSITORY='${env:GITHUB_REPOSITORY}'"
+            "export GITHUB_SHA='${env:GITHUB_SHA}'"
+            "export NUGET_XMLDOC_MODE='skip'"
+            "export S3_BUCKET_NAME='${env:S3_BUCKET_NAME}'"
+            "export S3_OBJECT_KEY='${env:S3_OBJECT_KEY}'"
+            "export STATUS_OBJECT_KEY='${env:STATUS_OBJECT_KEY}'"
+            "/usr/bin/pwsh -NoLogo -NoProfile -File /opt/benchmark/run-benchmark.ps1"
+          )
+        } | ConvertTo-Json -Compress
+
+        $commandId = aws ssm send-command `
+          --instance-ids ${env:INSTANCE_ID} `
+          --document-name "AWS-RunShellScript" `
+          --comment "Run benchmark.ps1" `
+          --parameters $commands `
+          --timeout-seconds 1800 `
+          --query "Command.CommandId" `
+          --output text
+
+        "ssm-command-id=${commandId}" >> ${env:GITHUB_OUTPUT}
+
+    - name: Wait for benchmark command
+      env:
+        COMMAND_ID: ${{ steps.start-benchmark.outputs.ssm-command-id }}
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        function Write-PollMessage([string] $Message) {
+          $timestamp = [DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          Write-Output "[${timestamp}] ${Message}"
+        }
+
+        $completed = $false
+        $failedStatuses = @("Cancelled", "Cancelling", "Failed", "TimedOut", "Undeliverable", "Terminated")
+
+        for ($pollCount = 1; $pollCount -le 180; $pollCount++) {
+          $status = aws ssm get-command-invocation `
+            --command-id ${env:COMMAND_ID} `
+            --instance-id ${env:INSTANCE_ID} `
+            --query "Status" `
+            --output text 2>$null
+
+          if (($LASTEXITCODE -ne 0) -or [string]::IsNullOrWhiteSpace($status) -or ($status -eq "None")) {
+            Write-PollMessage "Waiting for the SSM command invocation to become available."
+            Start-Sleep -Seconds 10
+            continue
+          }
+
+          Write-PollMessage "Benchmark command status is '${status}'."
+
+          if ($status -eq "Success") {
+            $stdout = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "StandardOutputContent" `
+              --output text 2>$null
+
+            $stderr = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "StandardErrorContent" `
+              --output text 2>$null
+
+            if (-Not [string]::IsNullOrWhiteSpace($stdout) -and ($stdout -ne "None")) {
+              Write-Output "Benchmark command standard output:"
+              Write-Output $stdout
+            }
+
+            if (-Not [string]::IsNullOrWhiteSpace($stderr) -and ($stderr -ne "None")) {
+              Write-Output "Benchmark command standard error:"
+              Write-Output $stderr
+            }
+
+            $completed = $true
+            break
+          }
+
+          if ($failedStatuses -contains $status) {
+            $responseCode = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "ResponseCode" `
+              --output text 2>$null
+
+            $stdout = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "StandardOutputContent" `
+              --output text 2>$null
+
+            $stderr = aws ssm get-command-invocation `
+              --command-id ${env:COMMAND_ID} `
+              --instance-id ${env:INSTANCE_ID} `
+              --query "StandardErrorContent" `
+              --output text 2>$null
+
+            if (-Not [string]::IsNullOrWhiteSpace($stdout) -and ($stdout -ne "None")) {
+              Write-Output "Benchmark command standard output:"
+              Write-Output $stdout
+            }
+
+            if (-Not [string]::IsNullOrWhiteSpace($stderr) -and ($stderr -ne "None")) {
+              Write-Output "Benchmark command standard error:"
+              Write-Output $stderr
+            }
+
+            $consoleOutput = aws ec2 get-console-output `
+              --instance-id ${env:INSTANCE_ID} `
+              --latest `
+              --query "Output" `
+              --output text 2>$null
+
+            if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
+              Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
+              Write-Output $consoleOutput
+            }
+            else {
+              Write-Output "EC2 console output was not available after the benchmark command failed."
+            }
+
+            throw "The benchmark command failed with status '${status}' and response code '${responseCode}'."
+          }
+
+          Start-Sleep -Seconds 10
+        }
+
+        if (-Not $completed) {
+          $consoleOutput = aws ec2 get-console-output `
+            --instance-id ${env:INSTANCE_ID} `
+            --latest `
+            --query "Output" `
+            --output text 2>$null
+
+          if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
+            Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
+            Write-Output $consoleOutput
+          }
+
+          throw "The benchmark command did not complete in time."
+        }
+
+    - name: Terminate EC2 instance
+      if: ${{ always() && steps.launch-instance.outputs.instance-id != '' }}
+      continue-on-error: true
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      run: |
+        $ErrorActionPreference = "Continue"
+
+        $consoleOutput = aws ec2 get-console-output `
+          --instance-id ${env:INSTANCE_ID} `
+          --latest `
+          --query "Output" `
+          --output text 2>$null
+
+        if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
+          Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
+          Write-Output $consoleOutput
+        }
+        else {
+          Write-Output "EC2 console output was not available before termination."
+        }
+
+        Write-Output "Terminating EC2 instance ${env:INSTANCE_ID}."
+        aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --skip-os-shutdown --output json | Out-Null
+
+
+    - name: Wait for EC2 instance termination
+      if: ${{ always() && steps.launch-instance.outputs.instance-id != '' }}
+      continue-on-error: true
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      run: |
+        $ErrorActionPreference = "Stop"
+        aws ec2 wait instance-terminated --instance-ids ${env:INSTANCE_ID}
+
+    - name: Download benchmark artifacts
+      if: ${{ always() && (steps.launch-instance.outputs.s3-object-key != '' || steps.launch-instance.outputs.status-object-key != '') }}
+      shell: pwsh
+      env:
+        S3_OBJECT_KEY: ${{ steps.launch-instance.outputs.s3-object-key }}
+        STATUS_OBJECT_KEY: ${{ steps.launch-instance.outputs.status-object-key }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $artifactsDir = Join-Path ${env:GITHUB_WORKSPACE} "BenchmarkDotNet.Artifacts"
+        $zipPath = Join-Path $artifactsDir "benchmark-results.zip"
+        $statusPath = Join-Path $artifactsDir "benchmark-status.json"
+
+        New-Item -Path $artifactsDir -ItemType Directory -Force | Out-Null
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:S3_OBJECT_KEY})) {
+          $zipError = aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" $zipPath --region ${env:AWS_REGION} --only-show-errors 2>&1
+          if (($LASTEXITCODE -ne 0) -and -Not (Test-Path $zipPath)) {
+            Write-Output "Benchmark ZIP could not be downloaded from S3."
+            if (-Not [string]::IsNullOrWhiteSpace($zipError)) {
+              Write-Output $zipError
+            }
+          }
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:STATUS_OBJECT_KEY})) {
+          $statusError = aws s3 cp "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" $statusPath --region ${env:AWS_REGION} --only-show-errors 2>&1
+          if (($LASTEXITCODE -ne 0) -and -Not (Test-Path $statusPath)) {
+            Write-Output "Benchmark status file could not be downloaded from S3."
+            if (-Not [string]::IsNullOrWhiteSpace($statusError)) {
+              Write-Output $statusError
+            }
+          }
+        }
+
+        if (Test-Path $zipPath) {
+          Expand-Archive -Path $zipPath -DestinationPath $artifactsDir -Force
+        }
+
+    - name: Publish log artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: logs
+        path: |
+          ./BenchmarkDotNet.Artifacts/benchmark.log
+          ./BenchmarkDotNet.Artifacts/benchmark-status.json
+        if-no-files-found: ignore
+
+    - name: Publish benchmark artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: ${{ !cancelled() }}
+      with:
+        name: benchmarks
+        path: ./BenchmarkDotNet.Artifacts/results/**/*
+        if-no-files-found: error
+
+    - name: Delete uploaded artifacts from S3
+      if: ${{ always() && (steps.launch-instance.outputs.s3-object-key != '' || steps.launch-instance.outputs.status-object-key != '') }}
+      shell: pwsh
+      env:
+        S3_OBJECT_KEY: ${{ steps.launch-instance.outputs.s3-object-key }}
+        STATUS_OBJECT_KEY: ${{ steps.launch-instance.outputs.status-object-key }}
+      run: |
+        $ErrorActionPreference = "Continue"
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:S3_OBJECT_KEY})) {
+          aws s3 rm "s3://${env:S3_BUCKET_NAME}/${env:S3_OBJECT_KEY}" --region ${env:AWS_REGION} --only-show-errors 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Deleted S3 object ${env:S3_OBJECT_KEY}."
+          }
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:STATUS_OBJECT_KEY})) {
+          aws s3 rm "s3://${env:S3_BUCKET_NAME}/${env:STATUS_OBJECT_KEY}" --region ${env:AWS_REGION} --only-show-errors 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Deleted S3 object ${env:STATUS_OBJECT_KEY}."
+          }
+        }
+
+    - name: Output summary
+      if: ${{ always() }}
+      shell: pwsh
+      run: |
+        $summary = @()
+        $summary += "# Benchmark Results"
+        $summary += ""
+
+        $benchmarkResults = Get-ChildItem -Path "./BenchmarkDotNet.Artifacts/results/*.md" -ErrorAction SilentlyContinue
+
+        foreach ($result in $benchmarkResults) {
+          $title = [System.IO.Path]::GetFileNameWithoutExtension($result.Name)
+          $title = $title.Split("-")[0]
+          $title = $title.Split(".")[-1]
+
+          $summary += "## ${title}"
+          $summary += ""
+
+          Get-Content $result.FullName | ForEach-Object { $summary += $_ }
+          $summary += ""
+        }
+
+        $summary += ""
+        ($summary -Join "`n") >> ${env:GITHUB_STEP_SUMMARY}
+
+    - name: Ensure instance is terminated
+      if: ${{ always() && steps.launch-instance.outputs.instance-id != '' }}
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $state = aws ec2 describe-instances `
+          --instance-ids ${env:INSTANCE_ID} `
+          --query "Reservations[0].Instances[0].State.Name" `
+          --output text 2>$null
+
+        if (($LASTEXITCODE -eq 0) -and ($state -notin @("shutting-down", "terminated"))) {
+          aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --skip-os-shutdown --output json | Out-Null
+          aws ec2 wait instance-terminated --instance-ids ${env:INSTANCE_ID}
+        }
+
+    - name: Delete AWS resources
+      if: ${{ always() }}
+      shell: pwsh
+      env:
+        INSTANCE_PROFILE_NAME: ${{ steps.resource-names.outputs.instance-profile-name }}
+        INSTANCE_ROLE_NAME: ${{ steps.resource-names.outputs.instance-role-name }}
+        SECURITY_GROUP_ID: ${{ steps.create-security-group.outputs.security-group-id }}
+      run: |
+        $ErrorActionPreference = "Continue"
+        $cleanupErrors = $false
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:SECURITY_GROUP_ID})) {
+          for ($i = 0; $i -lt 12; $i++) {
+            aws ec2 delete-security-group --group-id ${env:SECURITY_GROUP_ID} 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Output "Deleted security group ${env:SECURITY_GROUP_ID}."
+              break
+            }
+            Start-Sleep -Seconds 10
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            $cleanupErrors = $true
+          }
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace(${env:INSTANCE_PROFILE_NAME}) -and -Not [string]::IsNullOrWhiteSpace(${env:INSTANCE_ROLE_NAME})) {
+          for ($i = 0; $i -lt 12; $i++) {
+            aws iam remove-role-from-instance-profile `
+              --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
+              --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              break
+            }
+            Start-Sleep -Seconds 10
+          }
+
+          for ($i = 0; $i -lt 12; $i++) {
+            aws iam delete-instance-profile --instance-profile-name ${env:INSTANCE_PROFILE_NAME} 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Output "Deleted instance profile ${env:INSTANCE_PROFILE_NAME}."
+              break
+            }
+            Start-Sleep -Seconds 10
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            $cleanupErrors = $true
+          }
+
+          aws iam detach-role-policy `
+            --role-name ${env:INSTANCE_ROLE_NAME} `
+            --policy-arn "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" 2>$null
+
+          aws iam detach-role-policy `
+            --role-name ${env:INSTANCE_ROLE_NAME} `
+            --policy-arn "${env:EC2_INSTANCE_POLICY_ARN}" 2>$null
+
+          for ($i = 0; $i -lt 12; $i++) {
+            aws iam delete-role --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Output "Deleted role ${env:INSTANCE_ROLE_NAME}."
+              break
+            }
+            Start-Sleep -Seconds 10
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            $cleanupErrors = $true
+          }
+        }
+
+        if ($cleanupErrors) {
+          throw "Failed to delete one or more AWS resources."
+        }
+
+    - name: Check benchmark result
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $statusPath = Join-Path ${env:GITHUB_WORKSPACE} "BenchmarkDotNet.Artifacts" "benchmark-status.json"
+        $zipPath = Join-Path ${env:GITHUB_WORKSPACE} "BenchmarkDotNet.Artifacts" "benchmark-results.zip"
+
+        if (-Not (Test-Path $zipPath)) {
+          throw "The benchmark ZIP file was not downloaded from S3."
+        }
+
+        if (-Not (Test-Path $statusPath)) {
+          throw "The benchmark status file was not downloaded from S3."
+        }
+
+        $status = Get-Content -Path $statusPath | ConvertFrom-Json
+
+        if ($status.ExitCode -ne 0) {
+          throw "The benchmark instance reported exit code $($status.ExitCode)."
+        }

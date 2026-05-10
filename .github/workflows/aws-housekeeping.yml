@@ -1,0 +1,212 @@
+name: aws-housekeeping
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    if: github.event.repository.fork == false
+
+    concurrency:
+      group: cleanup-ec2
+      cancel-in-progress: false
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      GH_TOKEN: ${{ github.token }}
+
+    environment:
+      name: aws
+      deployment: false
+
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Validate configuration
+      shell: pwsh
+      run: |
+        $required = @(
+          "AWS_REGION"
+          "AWS_ROLE_TO_ASSUME"
+          "GH_TOKEN"
+        )
+
+        foreach ($name in $required) {
+          if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+            throw "The ${name} environment variable must be configured."
+          }
+        }
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+      with:
+        aws-region: ${{ env.AWS_REGION }}
+        role-session-name: ${{ github.event.repository.name }}-${{ github.run_id }}-cleanup-aws
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+
+    - name: Delete leftover EC2 resources
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $completedRuns = @{}
+        $activeRuns = @{}
+        $cleanupErrors = $false
+
+        function Get-TagValue([object[]] $Tags, [string] $Key) {
+          $tag = $Tags | Where-Object { $_.Key -eq $Key } | Select-Object -First 1
+          if ($null -ne $tag) {
+            return [string]$tag.Value
+          }
+
+          return ""
+        }
+
+        function Test-IsCompletedRun([string] $RunId) {
+          if ([string]::IsNullOrWhiteSpace($RunId)) {
+            return $false
+          }
+
+          if ($completedRuns.ContainsKey($RunId)) {
+            return $true
+          }
+
+          if ($activeRuns.ContainsKey($RunId)) {
+            return $false
+          }
+
+          $run = gh api "repos/${env:GITHUB_REPOSITORY}/actions/runs/${RunId}" 2>$null
+
+          if (($LASTEXITCODE -ne 0) -or [string]::IsNullOrWhiteSpace($run)) {
+            Write-Output "Skipping resources for workflow run ${RunId} because its status could not be determined."
+            $activeRuns[$RunId] = $true
+            return $false
+          }
+
+          $run = $run | ConvertFrom-Json
+
+          if ($run.status -eq "completed") {
+            $completedRuns[$RunId] = $true
+            return $true
+          }
+
+          $activeRuns[$RunId] = $true
+          return $false
+        }
+
+        function Test-IsStaleBenchmarkResource([object[]] $Tags) {
+          if ((Get-TagValue $Tags "benchmarking") -ne "true") {
+            return $false
+          }
+
+          if ((Get-TagValue $Tags "GitHubRepository") -ne ${env:GITHUB_REPOSITORY}) {
+            return $false
+          }
+
+          return Test-IsCompletedRun (Get-TagValue $Tags "GitHubWorkflowRun")
+        }
+
+        $instances = @(
+          aws ec2 describe-instances `
+            --filters "Name=tag:benchmarking,Values=true" "Name=tag:GitHubRepository,Values=${env:GITHUB_REPOSITORY}" "Name=instance-state-name,Values=pending,running,stopping,stopped,shutting-down" `
+            --query "Reservations[].Instances[].{InstanceId:InstanceId,State:State.Name,Tags:Tags}" `
+            --output json | ConvertFrom-Json
+        )
+
+        $staleInstances = @(
+          $instances |
+            Where-Object { $_ -and (Test-IsStaleBenchmarkResource $_.Tags) }
+        )
+
+        if ($staleInstances.Count -gt 0) {
+          $instanceIds = @($staleInstances | ForEach-Object { $_.InstanceId })
+
+          foreach ($instance in $staleInstances) {
+            Write-Output "Terminating stale instance $($instance.InstanceId) in state '$($instance.State)'."
+          }
+
+          aws ec2 terminate-instances --instance-ids $instanceIds --output json | Out-Null
+          aws ec2 wait instance-terminated --instance-ids $instanceIds
+        }
+        else {
+          Write-Output "No stale benchmark instances were found."
+        }
+
+        $volumes = @(
+          aws ec2 describe-volumes `
+            --filters "Name=tag:benchmarking,Values=true" "Name=tag:GitHubRepository,Values=${env:GITHUB_REPOSITORY}" "Name=status,Values=available" `
+            --query "Volumes[].{VolumeId:VolumeId,Tags:Tags}" `
+            --output json | ConvertFrom-Json
+        )
+
+        $staleVolumes = @(
+          $volumes |
+            Where-Object { $_ -and (Test-IsStaleBenchmarkResource $_.Tags) }
+        )
+
+        if ($staleVolumes.Count -gt 0) {
+          foreach ($volume in $staleVolumes) {
+            aws ec2 delete-volume --volume-id $volume.VolumeId 2>$null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Output "Deleted stale volume $($volume.VolumeId)."
+            }
+            else {
+              Write-Output "Failed to delete stale volume $($volume.VolumeId)."
+              $cleanupErrors = $true
+            }
+          }
+        }
+        else {
+          Write-Output "No stale benchmark volumes were found."
+        }
+
+        $securityGroups = @(
+          aws ec2 describe-security-groups `
+            --filters "Name=tag:benchmarking,Values=true" "Name=tag:GitHubRepository,Values=${env:GITHUB_REPOSITORY}" `
+            --query "SecurityGroups[].{GroupId:GroupId,GroupName:GroupName,Tags:Tags}" `
+            --output json | ConvertFrom-Json
+        )
+
+        $staleSecurityGroups = @(
+          $securityGroups |
+            Where-Object { $_ -and $_.GroupName -like "gh-benchmark-*" -and (Test-IsStaleBenchmarkResource $_.Tags) }
+        )
+
+        if ($staleSecurityGroups.Count -gt 0) {
+          foreach ($group in $staleSecurityGroups) {
+            $deleted = $false
+
+            for ($i = 0; $i -lt 12; $i++) {
+              aws ec2 delete-security-group --group-id $group.GroupId 2>$null
+              if ($LASTEXITCODE -eq 0) {
+                Write-Output "Deleted stale security group $($group.GroupId)."
+                $deleted = $true
+                break
+              }
+
+              Start-Sleep -Seconds 10
+            }
+
+            if (-Not $deleted) {
+              Write-Output "Failed to delete stale security group $($group.GroupId)."
+              $cleanupErrors = $true
+            }
+          }
+        }
+        else {
+          Write-Output "No stale benchmark security groups were found."
+        }
+
+        if ($cleanupErrors) {
+          throw "One or more stale benchmark EC2 resources could not be deleted."
+        }
