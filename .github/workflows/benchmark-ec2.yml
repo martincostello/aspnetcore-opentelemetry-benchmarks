@@ -538,7 +538,7 @@ jobs:
               --instance-ids ${env:INSTANCE_ID} `
               --document-name "AWS-RunShellScript" `
               --comment "Check benchmark bootstrap completion" `
-              --parameters '{"commands":["test -f /opt/benchmark/bootstrap-complete"]}' `
+              --parameters '{"commands":["if [ -f /opt/benchmark/bootstrap-complete ]; then echo ready; else echo waiting; fi"]}' `
               --query "Command.CommandId" `
               --output text
 
@@ -553,8 +553,19 @@ jobs:
             Write-Output "Bootstrap poll ${pollCount}: bootstrap probe status is '${status}'."
 
             if ($status -eq "Success") {
-              $ready = $true
-              break
+              $probeOutput = aws ssm get-command-invocation `
+                --command-id $commandId `
+                --instance-id ${env:INSTANCE_ID} `
+                --query "StandardOutputContent" `
+                --output text
+
+              $probeOutput = $probeOutput.Trim()
+              Write-Output "Bootstrap poll ${pollCount}: bootstrap probe output is '${probeOutput}'."
+
+              if ($probeOutput -eq "ready") {
+                $ready = $true
+                break
+              }
             }
 
             if ($status -eq "Failed") {
