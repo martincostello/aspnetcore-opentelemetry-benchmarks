@@ -404,8 +404,8 @@ jobs:
             }
 
             $status = [ordered]@{
-              Repository = $env:GITHUB_REPOSITORY
-              Sha = $env:GITHUB_SHA
+              Repository = ${env:GITHUB_REPOSITORY}
+              Sha = ${env:GITHUB_SHA}
               ExitCode = $exitCode
               CompletedAtUtc = [DateTime]::UtcNow.ToString("O")
             }
@@ -420,8 +420,8 @@ jobs:
 
             Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zipPath -Force
 
-            & aws s3 cp $zipPath "s3://$($env:S3_BUCKET_NAME)/$($env:S3_OBJECT_KEY)" --region $env:AWS_REGION --only-show-errors
-            & aws s3 cp $statusPath "s3://$($env:S3_BUCKET_NAME)/$($env:STATUS_OBJECT_KEY)" --region $env:AWS_REGION --only-show-errors
+            & aws s3 cp $zipPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:S3_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
+            & aws s3 cp $statusPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:STATUS_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
           } finally {
             & /usr/sbin/shutdown -h now
           }
@@ -434,17 +434,17 @@ jobs:
         touch "${install_root}/bootstrap-complete"
         '@
 
-        $gitDownloadVersion = $env:GIT_VERSION.TrimStart("v")
-        $pwshAssetVersion = $env:PWSH_VERSION.TrimStart("v")
-        $pwshTagVersion = $env:PWSH_VERSION.StartsWith("v") ? $env:PWSH_VERSION : "v$($env:PWSH_VERSION)"
+        $gitDownloadVersion = ${env:GIT_VERSION}.TrimStart("v")
+        $pwshAssetVersion = ${env:PWSH_VERSION}.TrimStart("v")
+        $pwshTagVersion = ${env:PWSH_VERSION}.StartsWith("v") ? ${env:PWSH_VERSION} : "v$(${env:PWSH_VERSION})"
 
         $userData = $userDataTemplate.
-          Replace("__AWS_CLI_VERSION__", $env:AWS_CLI_VERSION).
-          Replace("__AWS_CLI_GPG_FINGERPRINT__", $env:AWS_CLI_GPG_FINGERPRINT).
-          Replace("__EC2_ARCHITECTURE__", $env:EC2_ARCHITECTURE).
-          Replace("__GITHUB_SHA__", $env:GITHUB_SHA).
+          Replace("__AWS_CLI_VERSION__", ${env:AWS_CLI_VERSION}).
+          Replace("__AWS_CLI_GPG_FINGERPRINT__", ${env:AWS_CLI_GPG_FINGERPRINT}).
+          Replace("__EC2_ARCHITECTURE__", ${env:EC2_ARCHITECTURE}).
+          Replace("__GITHUB_SHA__", ${env:GITHUB_SHA}).
           Replace("__GIT_DOWNLOAD_VERSION__", $gitDownloadVersion).
-          Replace("__GITHUB_REPOSITORY__", $env:GITHUB_REPOSITORY).
+          Replace("__GITHUB_REPOSITORY__", ${env:GITHUB_REPOSITORY}).
           Replace("__PWSH_ASSET_VERSION__", $pwshAssetVersion).
           Replace("__PWSH_TAG_VERSION__", $pwshTagVersion)
 
@@ -664,7 +664,7 @@ jobs:
         $ErrorActionPreference = "Continue"
         $cleanupErrors = $false
 
-        if (-Not [string]::IsNullOrWhiteSpace($env:SECURITY_GROUP_ID)) {
+        if (-Not [string]::IsNullOrWhiteSpace(${env:SECURITY_GROUP_ID})) {
           for ($i = 0; $i -lt 12; $i++) {
             aws ec2 delete-security-group --group-id ${env:SECURITY_GROUP_ID} 2>$null
             if ($LASTEXITCODE -eq 0) {
@@ -678,7 +678,7 @@ jobs:
           }
         }
 
-        if (-Not [string]::IsNullOrWhiteSpace($env:INSTANCE_PROFILE_NAME) -and -Not [string]::IsNullOrWhiteSpace($env:INSTANCE_ROLE_NAME)) {
+        if (-Not [string]::IsNullOrWhiteSpace(${env:INSTANCE_PROFILE_NAME}) -and -Not [string]::IsNullOrWhiteSpace(${env:INSTANCE_ROLE_NAME})) {
           aws iam remove-role-from-instance-profile `
             --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
             --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
