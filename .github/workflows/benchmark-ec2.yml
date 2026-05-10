@@ -596,13 +596,14 @@ jobs:
 
     - name: Publish downloaded artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      if: ${{ !cancelled() && hashFiles('BenchmarkDotNet.Artifacts/**/*') != '' }}
+      if: ${{ !cancelled() }}
       with:
         name: benchmark-ec2-artifacts
-        path: ./BenchmarkDotNet.Artifacts
+        path: ./BenchmarkDotNet.Artifacts/results/**/*
         if-no-files-found: error
 
     - name: Delete uploaded ZIP from S3
+      if: ${{ success() && !cancelled() && steps.launch-instance.outputs.s3-object-key != '' }}
       shell: pwsh
       env:
         S3_OBJECT_KEY: ${{ steps.launch-instance.outputs.s3-object-key }}
