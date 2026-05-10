@@ -730,6 +730,7 @@ jobs:
           for ($i = 0; $i -lt 12; $i++) {
             aws ec2 delete-security-group --group-id ${env:SECURITY_GROUP_ID} 2>$null
             if ($LASTEXITCODE -eq 0) {
+              Write-Host "Deleted security group ${env:SECURITY_GROUP_ID}."
               break
             }
             Start-Sleep -Seconds 10
@@ -748,6 +749,7 @@ jobs:
           for ($i = 0; $i -lt 12; $i++) {
             aws iam delete-instance-profile --instance-profile-name ${env:INSTANCE_PROFILE_NAME} 2>$null
             if ($LASTEXITCODE -eq 0) {
+              Write-Host "Deleted instance profile ${env:INSTANCE_PROFILE_NAME}."
               break
             }
             Start-Sleep -Seconds 10
@@ -768,6 +770,7 @@ jobs:
           for ($i = 0; $i -lt 12; $i++) {
             aws iam delete-role --role-name ${env:INSTANCE_ROLE_NAME} 2>$null
             if ($LASTEXITCODE -eq 0) {
+              Write-Host "Deleted role ${env:INSTANCE_ROLE_NAME}."
               break
             }
             Start-Sleep -Seconds 10
