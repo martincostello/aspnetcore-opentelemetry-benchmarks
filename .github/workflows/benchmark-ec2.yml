@@ -403,7 +403,7 @@ jobs:
         git fetch --depth 1 origin "__GITHUB_SHA__"
         git checkout --force "__GITHUB_SHA__"
 
-        cat > "${install_root}/run-benchmark.ps1 -Job Short" <<'POWERSHELL'
+        cat > "${install_root}/run-benchmark.ps1" <<'POWERSHELL'
         $ErrorActionPreference = "Stop"
 
         $workDir = "/opt/benchmark"
@@ -423,7 +423,7 @@ jobs:
         try {
           Push-Location $repoDir
           $locationPushed = $true
-          & ./benchmark.ps1 *>&1 | Tee-Object -FilePath $logPath -Append
+          & ./benchmark.ps1 -Job Short *>&1 | Tee-Object -FilePath $logPath -Append
         } catch {
           $_ | Out-String | Tee-Object -FilePath $logPath -Append | Out-Host
           $exitCode = 1
