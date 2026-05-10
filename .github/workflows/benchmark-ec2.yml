@@ -111,6 +111,7 @@ jobs:
         }
 
         $trustPolicyPath = Join-Path ${env:RUNNER_TEMP} "trust-policy.json"
+        $tagsPath = Join-Path ${env:RUNNER_TEMP} "role-tags.json"
         $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
         $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
         $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
@@ -129,11 +130,17 @@ jobs:
         }
 
         $trustPolicy | ConvertTo-Json -Depth 10 | Set-Content -Path $trustPolicyPath
+        @(
+          @{ Key = "GitHubRepository"; Value = $repoTagValue }
+          @{ Key = "GitHubWorkflowRun"; Value = $runIdTagValue }
+          @{ Key = "GitHubWorkflowRunAttempt"; Value = $runAttemptTagValue }
+          @{ Key = "benchmarking"; Value = "true" }
+        ) | ConvertTo-Json -Depth 10 | Set-Content -Path $tagsPath
 
         aws iam create-role `
           --role-name ${env:INSTANCE_ROLE_NAME} `
           --assume-role-policy-document "file://${trustPolicyPath}" `
-          --tags Key=GitHubRepository,Value="${repoTagValue}" Key=GitHubWorkflowRun,Value="${runIdTagValue}" Key=GitHubWorkflowRunAttempt,Value="${runAttemptTagValue}" Key=benchmarking,Value=true `
+          --tags "file://${tagsPath}" `
           --output json | Out-Null
 
     - name: Attach SSM policy to EC2 instance role
@@ -171,13 +178,20 @@ jobs:
           return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
         }
 
+        $tagsPath = Join-Path ${env:RUNNER_TEMP} "instance-profile-tags.json"
         $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
         $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
         $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+        @(
+          @{ Key = "GitHubRepository"; Value = $repoTagValue }
+          @{ Key = "GitHubWorkflowRun"; Value = $runIdTagValue }
+          @{ Key = "GitHubWorkflowRunAttempt"; Value = $runAttemptTagValue }
+          @{ Key = "benchmarking"; Value = "true" }
+        ) | ConvertTo-Json -Depth 10 | Set-Content -Path $tagsPath
 
         aws iam create-instance-profile `
           --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
-          --tags Key=GitHubRepository,Value="${repoTagValue}" Key=GitHubWorkflowRun,Value="${runIdTagValue}" Key=GitHubWorkflowRunAttempt,Value="${runAttemptTagValue}" Key=benchmarking,Value=true `
+          --tags "file://${tagsPath}" `
           --output json | Out-Null
 
         aws iam add-role-to-instance-profile `
