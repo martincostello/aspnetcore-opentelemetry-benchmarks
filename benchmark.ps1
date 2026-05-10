@@ -91,6 +91,11 @@ if (-Not [string]::IsNullOrEmpty(${env:GITHUB_SHA})) {
     $additionalArgs += "json"
 }
 
+if ($installDotNetSdk) {
+    $additionalArgs += "--cli"
+    $additionalArgs += $dotnet
+}
+
 $dotnetArgs = @(
     "run"
     "--project", $benchmarks
