@@ -95,7 +95,14 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
 
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
         $trustPolicyPath = Join-Path ${env:RUNNER_TEMP} "trust-policy.json"
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
 
         $trustPolicy = @{
           Version = "2012-10-17"
@@ -115,7 +122,7 @@ jobs:
         aws iam create-role `
           --role-name ${env:INSTANCE_ROLE_NAME} `
           --assume-role-policy-document "file://${trustPolicyPath}" `
-          --tags Key=GitHubRepository,Value="${env:GITHUB_REPOSITORY}" Key=GitHubWorkflowRun,Value="${env:GITHUB_RUN_ID}" Key=GitHubWorkflowRunAttempt,Value="${env:GITHUB_RUN_ATTEMPT}" Key=benchmarking,Value=true `
+          --tags Key=GitHubRepository,Value="${repoTagValue}" Key=GitHubWorkflowRun,Value="${runIdTagValue}" Key=GitHubWorkflowRunAttempt,Value="${runAttemptTagValue}" Key=benchmarking,Value=true `
           --output json | Out-Null
 
     - name: Attach SSM policy to EC2 instance role
@@ -149,9 +156,17 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
 
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+
         aws iam create-instance-profile `
           --instance-profile-name ${env:INSTANCE_PROFILE_NAME} `
-          --tags Key=GitHubRepository,Value="${env:GITHUB_REPOSITORY}" Key=GitHubWorkflowRun,Value="${env:GITHUB_RUN_ID}" Key=GitHubWorkflowRunAttempt,Value="${env:GITHUB_RUN_ATTEMPT}" Key=benchmarking,Value=true `
+          --tags Key=GitHubRepository,Value="${repoTagValue}" Key=GitHubWorkflowRun,Value="${runIdTagValue}" Key=GitHubWorkflowRunAttempt,Value="${runAttemptTagValue}" Key=benchmarking,Value=true `
           --output json | Out-Null
 
         aws iam add-role-to-instance-profile `
@@ -226,11 +241,19 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
 
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+
         $securityGroupId = aws ec2 create-security-group `
           --group-name ${env:SECURITY_GROUP_NAME} `
           --description "GitHub Actions benchmark instance ${env:GITHUB_RUN_ID}/${env:GITHUB_RUN_ATTEMPT}" `
           --vpc-id ${env:VPC_ID} `
-          --tag-specifications "ResourceType=security-group,Tags=[{Key=GitHubRepository,Value=${env:GITHUB_REPOSITORY}},{Key=GitHubWorkflowRun,Value=${env:GITHUB_RUN_ID}},{Key=GitHubWorkflowRunAttempt,Value=${env:GITHUB_RUN_ATTEMPT}},{Key=benchmarking,Value=true}]" `
+          --tag-specifications "ResourceType=security-group,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=benchmarking,Value=true}]" `
           --query "GroupId" `
           --output text
 
@@ -246,9 +269,18 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
 
+        function Convert-ToAwsTagValue([string] $Value) {
+          return ($Value -replace '[^\p{L}\p{Z}\p{N}_.:/=+\-@]', '_')
+        }
+
         $createdAt = [DateTime]::UtcNow.ToString("O")
         $s3ObjectKey = "${env:GITHUB_REPOSITORY}/${env:GITHUB_SHA}.zip"
         $statusObjectKey = "${s3ObjectKey}.status.json"
+        $repoTagValue = Convert-ToAwsTagValue ${env:GITHUB_REPOSITORY}
+        $gitShaTagValue = Convert-ToAwsTagValue ${env:GITHUB_SHA}
+        $runIdTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ID}
+        $runAttemptTagValue = Convert-ToAwsTagValue ${env:GITHUB_RUN_ATTEMPT}
+        $createdAtTagValue = Convert-ToAwsTagValue $createdAt
 
         $userDataTemplate = @'
         #!/bin/bash
@@ -469,7 +501,7 @@ jobs:
           --metadata-options "HttpEndpoint=enabled,HttpTokens=required" `
           --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=${env:SUBNET_ID},Groups=${env:SECURITY_GROUP_ID},DeleteOnTermination=true" `
           --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"DeleteOnTermination":true,"VolumeSize":16,"VolumeType":"gp3"}}]' `
-          --tag-specifications "ResourceType=instance,Tags=[{Key=GitHubRepository,Value=${env:GITHUB_REPOSITORY}},{Key=GitSha,Value=${env:GITHUB_SHA}},{Key=GitHubWorkflowRun,Value=${env:GITHUB_RUN_ID}},{Key=GitHubWorkflowRunAttempt,Value=${env:GITHUB_RUN_ATTEMPT}},{Key=CreatedUtc,Value=${createdAt}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${env:GITHUB_REPOSITORY}},{Key=GitSha,Value=${env:GITHUB_SHA}},{Key=GitHubWorkflowRun,Value=${env:GITHUB_RUN_ID}},{Key=GitHubWorkflowRunAttempt,Value=${env:GITHUB_RUN_ATTEMPT}},{Key=CreatedUtc,Value=${createdAt}},{Key=benchmarking,Value=true}]" `
+          --tag-specifications "ResourceType=instance,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
           --user-data "file://${userDataPath}" `
           --query "Instances[0].InstanceId" `
           --output text
