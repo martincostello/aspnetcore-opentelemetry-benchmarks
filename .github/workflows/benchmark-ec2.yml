@@ -10,6 +10,7 @@ env:
   AMI_VERSION: 'ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-'
   EC2_ARCHITECTURE: 'arm64'
   EC2_INSTANCE_TYPE: 'm8g.large'
+  EC2_ROOT_VOLUME_SIZE: '64'
   FORCE_COLOR: 1
   TERM: xterm
 
@@ -453,7 +454,7 @@ jobs:
           --instance-initiated-shutdown-behavior "terminate" `
           --metadata-options "HttpEndpoint=enabled,HttpTokens=required" `
           --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=${env:SUBNET_ID},Groups=${env:SECURITY_GROUP_ID},DeleteOnTermination=true" `
-          --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"DeleteOnTermination":true,"VolumeSize":16,"VolumeType":"gp3"}}]' `
+          --block-device-mappings "[{`"DeviceName`":`"/dev/xvda`",`"Ebs`":{`"DeleteOnTermination`":true,`"VolumeSize`":${env:EC2_ROOT_VOLUME_SIZE},`"VolumeType`":`"gp3`"}}]" `
           --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${instanceNameTagValue}},{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
           --user-data "file://${userDataPath}" `
           --query "Instances[0].InstanceId" `
