@@ -11,10 +11,6 @@ env:
   EC2_ARCHITECTURE: 'arm64'
   EC2_INSTANCE_TYPE: 'm8g.large'
   FORCE_COLOR: 1
-  # renovate: datasource=github-tags depName=git packageName=git/git
-  GIT_VERSION: 'v2.54.0'
-  # renovate: datasource=github-releases depName=PowerShell packageName=PowerShell/PowerShell
-  PWSH_VERSION: 'v7.6.1'
   TERM: xterm
 
 jobs:
@@ -327,21 +323,13 @@ jobs:
         apt-get update
         apt-get upgrade -y
         apt-get install -y --no-install-recommends \
-          autoconf \
-          build-essential \
           ca-certificates \
           curl \
-          gettext \
-          gnupg \
-          libcurl4-openssl-dev \
-          libexpat1-dev \
-          libssl-dev \
-          make \
+          git \
           snapd \
           tar \
           unzip \
-          zip \
-          zlib1g-dev
+          zip
 
         if ! snap list amazon-ssm-agent >/dev/null 2>&1; then
           snap install amazon-ssm-agent --classic
@@ -360,33 +348,10 @@ jobs:
         mkdir -p "${install_root}"
         cd /tmp
 
-        curl -fsSL -o "git.tar.gz" "https://www.kernel.org/pub/software/scm/git/git-__GIT_DOWNLOAD_VERSION__.tar.gz"
-        curl -fsSL -o "git-sha256sums.asc" "https://www.kernel.org/pub/software/scm/git/sha256sums.asc"
-        git_expected_sha="$(awk '/ git-__GIT_DOWNLOAD_VERSION__\.tar\.gz$/ { print $1; exit }' "git-sha256sums.asc")"
-        if [ -z "${git_expected_sha}" ]; then
-          echo "Failed to resolve the expected checksum for Git __GIT_DOWNLOAD_VERSION__." >&2
-          exit 1
-        fi
-        printf '%s  %s\n' "${git_expected_sha}" "git.tar.gz" | sha256sum --check --strict
-        tar -xzf "git.tar.gz"
-        cd "git-__GIT_DOWNLOAD_VERSION__"
-        make configure
-        ./configure --prefix=/usr/local
-        make all -j"$(nproc)"
-        make install
-
-        mkdir -p /opt/microsoft/powershell/7
-        curl -fsSL -o "powershell.tar.gz" "https://github.com/PowerShell/PowerShell/releases/download/__PWSH_TAG_VERSION__/powershell-__PWSH_ASSET_VERSION__-linux-__EC2_ARCHITECTURE__.tar.gz"
-        curl -fsSL -o "powershell-hashes.sha256" "https://github.com/PowerShell/PowerShell/releases/download/__PWSH_TAG_VERSION__/hashes.sha256"
-        pwsh_expected_sha="$(awk '/ powershell-__PWSH_ASSET_VERSION__-linux-__EC2_ARCHITECTURE__\.tar\.gz$/ { print $1; exit }' "powershell-hashes.sha256")"
-        if [ -z "${pwsh_expected_sha}" ]; then
-          echo "Failed to resolve the expected checksum for PowerShell __PWSH_ASSET_VERSION__." >&2
-          exit 1
-        fi
-        printf '%s  %s\n' "${pwsh_expected_sha}" "powershell.tar.gz" | sha256sum --check --strict
-        tar -xzf "powershell.tar.gz" -C /opt/microsoft/powershell/7
-        chmod +x /opt/microsoft/powershell/7/pwsh
-        ln -sf /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+        curl -fsSL -o "packages-microsoft-prod.deb" "https://packages.microsoft.com/config/ubuntu/26.04/packages-microsoft-prod.deb"
+        apt-get install -y "./packages-microsoft-prod.deb"
+        apt-get update
+        apt-get install -y --no-install-recommends powershell
 
         git clone --filter=tree:0 "https://github.com/__GITHUB_REPOSITORY__.git" "${repo_dir}"
         cd "${repo_dir}"
@@ -464,17 +429,10 @@ jobs:
         touch "${install_root}/bootstrap-complete"
         '@
 
-        $gitDownloadVersion = ${env:GIT_VERSION}.TrimStart("v")
-        $pwshAssetVersion = ${env:PWSH_VERSION}.TrimStart("v")
-        $pwshTagVersion = ${env:PWSH_VERSION}.StartsWith("v") ? ${env:PWSH_VERSION} : "v$(${env:PWSH_VERSION})"
-
         $userData = $userDataTemplate.
           Replace("__EC2_ARCHITECTURE__", ${env:EC2_ARCHITECTURE}).
           Replace("__GITHUB_SHA__", ${env:GITHUB_SHA}).
-          Replace("__GIT_DOWNLOAD_VERSION__", $gitDownloadVersion).
-          Replace("__GITHUB_REPOSITORY__", ${env:GITHUB_REPOSITORY}).
-          Replace("__PWSH_ASSET_VERSION__", $pwshAssetVersion).
-          Replace("__PWSH_TAG_VERSION__", $pwshTagVersion)
+          Replace("__GITHUB_REPOSITORY__", ${env:GITHUB_REPOSITORY})
 
         $userDataPath = Join-Path ${env:RUNNER_TEMP} "user-data.sh"
         Set-Content -Path $userDataPath -Value $userData -NoNewline
