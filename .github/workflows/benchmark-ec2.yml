@@ -419,7 +419,8 @@ jobs:
             & aws s3 cp $zipPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:S3_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
             & aws s3 cp $statusPath "s3://$(${env:S3_BUCKET_NAME})/$(${env:STATUS_OBJECT_KEY})" --region ${env:AWS_REGION} --only-show-errors
           } finally {
-            & /usr/sbin/shutdown -h now
+            # TODO Restore before merge
+            # & /usr/sbin/shutdown -h now
           }
         }
 
