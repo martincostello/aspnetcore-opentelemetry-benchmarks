@@ -9,7 +9,6 @@ permissions: {}
 
 jobs:
   cleanup:
-    name: cleanup
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     if: github.event.repository.fork == false
