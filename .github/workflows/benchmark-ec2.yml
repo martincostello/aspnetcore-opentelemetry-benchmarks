@@ -628,6 +628,16 @@ jobs:
           throw "The EC2 instance did not finish bootstrapping in time."
         }
 
+    - name: Terminate EC2 instance if bootstrap wait is cancelled
+      if: ${{ (cancelled() || failure()) && steps.launch-instance.outputs.instance-id != '' }}
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      run: |
+        $ErrorActionPreference = "Continue"
+        Write-Output "Bootstrap did not complete successfully. Terminating EC2 instance ${env:INSTANCE_ID}."
+        aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
+
     - name: Run benchmarks
       id: start-benchmark
       shell: pwsh
