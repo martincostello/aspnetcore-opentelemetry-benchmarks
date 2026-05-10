@@ -600,6 +600,10 @@ jobs:
               $ready = $true
               break
             }
+
+            if ($status -eq "Failed") {
+              throw "The EC2 bootstrap probe failed."
+            }
           }
           else {
             Write-Output "Bootstrap poll ${pollCount}: waiting for the instance to come online in SSM."
