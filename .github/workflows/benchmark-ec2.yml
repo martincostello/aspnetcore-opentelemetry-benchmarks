@@ -611,6 +611,7 @@ jobs:
             "export DOTNET_NOLOGO='true'"
             "export GITHUB_REPOSITORY='${env:GITHUB_REPOSITORY}'"
             "export GITHUB_SHA='${env:GITHUB_SHA}'"
+            "export PROCESSOR_ARCHITECTURE='arm64'"
             "export NUGET_XMLDOC_MODE='skip'"
             "/usr/bin/pwsh -NoLogo -NoProfile -File /opt/benchmark/run-benchmark.ps1"
           )
