@@ -239,7 +239,7 @@ jobs:
         $ErrorActionPreference = "Stop"
 
         $vpcId = aws ec2 describe-vpcs `
-          --filters Name=isDefault,Values=true `
+          --filters "Name=isDefault,Values=true" `
           --query "Vpcs[0].VpcId" `
           --output text
 
@@ -248,7 +248,7 @@ jobs:
         }
 
         $subnetId = aws ec2 describe-subnets `
-          --filters Name=vpc-id,Values=$vpcId Name=default-for-az,Values=true `
+          --filters "Name=vpc-id,Values=$vpcId" "Name=default-for-az,Values=true" `
           --query "Subnets[0].SubnetId" `
           --output text
 
