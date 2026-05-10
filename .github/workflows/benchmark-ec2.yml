@@ -377,7 +377,7 @@ jobs:
         curl -fsSL -o "awscliv2.zip.sig" "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-__AWS_CLI_VERSION__.zip.sig"
         export GNUPGHOME="$(mktemp -d)"
         chmod 700 "${GNUPGHOME}"
-        cat > "aws-cli-public-key.asc" <<'AWSCLIKEY'
+        cat <<'AWSCLIKEY' | sed 's/^        //' > "aws-cli-public-key.asc"
         -----BEGIN PGP PUBLIC KEY BLOCK-----
         mQINBF2Cr7UBEADJZHcgusOJl7ENSyumXh85z0TRV0xJorM2B/JL0kHOyigQluUG
         ZMLhENaG0bYatdrKP+3H91lvK050pXwnO/R7fB/FSTouki4ciIx5OuLlnJZIxSzx
