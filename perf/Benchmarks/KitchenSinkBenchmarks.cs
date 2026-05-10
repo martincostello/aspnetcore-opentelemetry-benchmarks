@@ -17,7 +17,6 @@ namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
 [BenchmarkCategory("ASP.NET Core")]
 [BenchmarkCategory("AWS")]
-[BenchmarkCategory("Docker")]
 [BenchmarkCategory("HTTP")]
 [BenchmarkCategory("Logs")]
 [BenchmarkCategory("Metrics")]

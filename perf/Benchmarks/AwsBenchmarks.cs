@@ -12,7 +12,6 @@ using OpenTelemetry.Trace;
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
 [BenchmarkCategory("AWS")]
-[BenchmarkCategory("Docker")]
 public class AwsBenchmarks : Benchmarks, IScenario
 {
     private const string BucketName = "benchmarks";
