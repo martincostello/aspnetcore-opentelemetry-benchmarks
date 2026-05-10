@@ -348,10 +348,11 @@ jobs:
         mkdir -p "${install_root}"
         cd /tmp
 
-        curl -fsSL -o "packages-microsoft-prod.deb" "https://packages.microsoft.com/config/ubuntu/26.04/packages-microsoft-prod.deb"
-        apt-get install -y "./packages-microsoft-prod.deb"
-        apt-get update
-        apt-get install -y --no-install-recommends powershell
+        if ! snap list powershell >/dev/null 2>&1; then
+          snap install powershell --classic
+        fi
+
+        ln -sf /snap/bin/pwsh /usr/bin/pwsh
 
         git clone --filter=tree:0 "https://github.com/__GITHUB_REPOSITORY__.git" "${repo_dir}"
         cd "${repo_dir}"
