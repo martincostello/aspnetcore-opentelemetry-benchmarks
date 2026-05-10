@@ -703,7 +703,8 @@ jobs:
         }
 
     - name: Terminate EC2 instance
-      if: ${{ (cancelled() || failure()) && steps.launch-instance.outputs.instance-id != '' }}
+      if: ${{ always() && steps.launch-instance.outputs.instance-id != '' }}
+      continue-on-error: true
       shell: pwsh
       env:
         INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
