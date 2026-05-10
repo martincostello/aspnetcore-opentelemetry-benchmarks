@@ -9,6 +9,7 @@ permissions: {}
 env:
   AMI_VERSION: 'ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-'
   EC2_ARCHITECTURE: 'arm64'
+  EC2_DOCKER_VOLUME_SIZE: '64'
   EC2_INSTANCE_TYPE: 'm8g.large'
   EC2_ROOT_VOLUME_SIZE: '64'
   FORCE_COLOR: 1
@@ -341,7 +342,46 @@ jobs:
           snap install aws-cli --classic
         fi
 
-        systemctl enable --now docker.service
+        docker_data_root="/mnt/docker-data"
+        root_source="$(realpath "$(findmnt -n -o SOURCE /)")"
+        root_disk="/dev/$(lsblk -no PKNAME "${root_source}")"
+        docker_disk="$(lsblk -dn -o NAME,TYPE | awk '$2 == "disk" { print "/dev/" $1 }' | grep -vx "${root_disk}" | head -n1)"
+
+        if [ -z "${docker_disk}" ]; then
+          echo "Failed to identify the Docker data disk." >&2
+          exit 1
+        fi
+
+        if ! blkid "${docker_disk}" >/dev/null 2>&1; then
+          mkfs.ext4 -F "${docker_disk}"
+        fi
+
+        mkdir -p "${docker_data_root}"
+        mount "${docker_disk}" "${docker_data_root}"
+
+        docker_uuid="$(blkid -s UUID -o value "${docker_disk}")"
+        if ! grep -q "${docker_uuid}" /etc/fstab; then
+          echo "UUID=${docker_uuid} ${docker_data_root} ext4 defaults,nofail 0 2" >> /etc/fstab
+        fi
+
+        systemctl stop docker.service docker.socket containerd.service 2>/dev/null || true
+
+        mkdir -p "${docker_data_root}/docker" "${docker_data_root}/containerd"
+        rm -rf /var/lib/docker /var/lib/containerd
+        ln -sfn "${docker_data_root}/docker" /var/lib/docker
+        ln -sfn "${docker_data_root}/containerd" /var/lib/containerd
+
+        mkdir -p /etc/containerd /etc/docker
+        containerd config default > /etc/containerd/config.toml
+        sed -i 's#^root = .*$#root = "/mnt/docker-data/containerd"#' /etc/containerd/config.toml
+
+        cat > /etc/docker/daemon.json <<'DOCKER'
+        {
+          "data-root": "/mnt/docker-data/docker"
+        }
+        DOCKER
+
+        systemctl enable --now containerd.service docker.service
         systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service
         ln -sf /snap/bin/aws /usr/bin/aws
 
@@ -454,7 +494,7 @@ jobs:
           --instance-initiated-shutdown-behavior "terminate" `
           --metadata-options "HttpEndpoint=enabled,HttpTokens=required" `
           --network-interfaces "AssociatePublicIpAddress=true,DeviceIndex=0,SubnetId=${env:SUBNET_ID},Groups=${env:SECURITY_GROUP_ID},DeleteOnTermination=true" `
-          --block-device-mappings "[{`"DeviceName`":`"/dev/xvda`",`"Ebs`":{`"DeleteOnTermination`":true,`"VolumeSize`":${env:EC2_ROOT_VOLUME_SIZE},`"VolumeType`":`"gp3`"}}]" `
+          --block-device-mappings "[{`"DeviceName`":`"/dev/xvda`",`"Ebs`":{`"DeleteOnTermination`":true,`"VolumeSize`":${env:EC2_ROOT_VOLUME_SIZE},`"VolumeType`":`"gp3`"}},{`"DeviceName`":`"/dev/sdf`",`"Ebs`":{`"DeleteOnTermination`":true,`"VolumeSize`":${env:EC2_DOCKER_VOLUME_SIZE},`"VolumeType`":`"gp3`"}}]" `
           --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${instanceNameTagValue}},{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" "ResourceType=volume,Tags=[{Key=GitHubRepository,Value=${repoTagValue}},{Key=GitSha,Value=${gitShaTagValue}},{Key=GitHubWorkflowRun,Value=${runIdTagValue}},{Key=GitHubWorkflowRunNumber,Value=${runNumberTagValue}},{Key=GitHubWorkflowRunAttempt,Value=${runAttemptTagValue}},{Key=CreatedUtc,Value=${createdAtTagValue}},{Key=benchmarking,Value=true}]" `
           --user-data "file://${userDataPath}" `
           --query "Instances[0].InstanceId" `
