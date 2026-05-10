@@ -614,7 +614,6 @@ jobs:
             "export GITHUB_REPOSITORY='${env:GITHUB_REPOSITORY}'"
             "export GITHUB_SHA='${env:GITHUB_SHA}'"
             "export NUGET_XMLDOC_MODE='skip'"
-            "export PROCESSOR_ARCHITECTURE='arm64'"
             "export S3_BUCKET_NAME='${env:S3_BUCKET_NAME}'"
             "export S3_OBJECT_KEY='${env:S3_OBJECT_KEY}'"
             "export STATUS_OBJECT_KEY='${env:STATUS_OBJECT_KEY}'"
