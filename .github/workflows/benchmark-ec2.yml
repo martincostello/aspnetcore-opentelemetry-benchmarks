@@ -10,7 +10,7 @@ env:
   AMI_VERSION: 'ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-'
   EC2_ARCHITECTURE: 'arm64'
   EC2_DOCKER_VOLUME_SIZE: '64'
-  EC2_INSTANCE_TYPE: 'm8g.xlarge'
+  EC2_INSTANCE_TYPE: 'm7i.xlarge'
   EC2_ROOT_VOLUME_SIZE: '16'
   FORCE_COLOR: 1
   TERM: xterm
