@@ -571,31 +571,6 @@ jobs:
           throw "The EC2 instance did not finish bootstrapping in time."
         }
 
-    - name: Terminate EC2 instance
-      if: ${{ (cancelled() || failure()) && steps.launch-instance.outputs.instance-id != '' }}
-      shell: pwsh
-      env:
-        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
-      run: |
-        $ErrorActionPreference = "Continue"
-
-        $consoleOutput = aws ec2 get-console-output `
-          --instance-id ${env:INSTANCE_ID} `
-          --latest `
-          --query "Output" `
-          --output text 2>$null
-
-        if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
-          Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
-          Write-Output $consoleOutput
-        }
-        else {
-          Write-Output "EC2 console output was not available before termination."
-        }
-
-        Write-Output "Bootstrap did not complete successfully. Terminating EC2 instance ${env:INSTANCE_ID}."
-        aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
-
     - name: Run benchmarks
       id: start-benchmark
       shell: pwsh
@@ -726,6 +701,32 @@ jobs:
 
           throw "The benchmark command did not complete in time."
         }
+
+    - name: Terminate EC2 instance
+      if: ${{ (cancelled() || failure()) && steps.launch-instance.outputs.instance-id != '' }}
+      shell: pwsh
+      env:
+        INSTANCE_ID: ${{ steps.launch-instance.outputs.instance-id }}
+      run: |
+        $ErrorActionPreference = "Continue"
+
+        $consoleOutput = aws ec2 get-console-output `
+          --instance-id ${env:INSTANCE_ID} `
+          --latest `
+          --query "Output" `
+          --output text 2>$null
+
+        if (($LASTEXITCODE -eq 0) -and -Not [string]::IsNullOrWhiteSpace($consoleOutput) -and ($consoleOutput -ne "None")) {
+          Write-Output "Latest EC2 console output for ${env:INSTANCE_ID}:"
+          Write-Output $consoleOutput
+        }
+        else {
+          Write-Output "EC2 console output was not available before termination."
+        }
+
+        Write-Output "Bootstrap did not complete successfully. Terminating EC2 instance ${env:INSTANCE_ID}."
+        aws ec2 terminate-instances --instance-ids ${env:INSTANCE_ID} --output json | Out-Null
+
 
     - name: Wait for EC2 instance termination
       if: ${{ always() && steps.launch-instance.outputs.instance-id != '' }}
