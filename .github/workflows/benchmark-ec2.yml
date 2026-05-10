@@ -19,7 +19,7 @@ jobs:
   benchmark:
     name: benchmark
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 45
     if: github.event.repository.fork == false
 
     concurrency:
@@ -522,7 +522,7 @@ jobs:
           Write-Output "[${timestamp}] ${Message}"
         }
 
-        $deadline = [DateTime]::UtcNow.AddMinutes(10)
+        $deadline = [DateTime]::UtcNow.AddMinutes(5)
         $ready = $false
 
         while ([DateTime]::UtcNow -lt $deadline) {
