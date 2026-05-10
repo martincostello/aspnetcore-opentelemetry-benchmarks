@@ -8,9 +8,6 @@ permissions: {}
 
 env:
   AMI_VERSION: 'ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-'
-  AWS_CLI_GPG_FINGERPRINT: 'FB5DB77FD5C118B80511ADA8A6310ACC4672475C'
-  # renovate: datasource=github-tags depName=awscli packageName=aws/aws-cli
-  AWS_CLI_VERSION: '2.34.45'
   EC2_ARCHITECTURE: 'arm64'
   EC2_INSTANCE_TYPE: 'm8g.large'
   FORCE_COLOR: 1
@@ -349,7 +346,12 @@ jobs:
           snap install amazon-ssm-agent --classic
         fi
 
+        if ! snap list aws-cli >/dev/null 2>&1; then
+          snap install aws-cli --classic
+        fi
+
         systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service
+        ln -sf /snap/bin/aws /usr/bin/aws
 
         install_root="/opt/benchmark"
         repo_dir="${install_root}/repo"
@@ -371,52 +373,6 @@ jobs:
         ./configure --prefix=/usr/local
         make all -j"$(nproc)"
         make install
-
-        cd /tmp
-        curl -fsSL -o "awscliv2.zip" "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-__AWS_CLI_VERSION__.zip"
-        curl -fsSL -o "awscliv2.zip.sig" "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-__AWS_CLI_VERSION__.zip.sig"
-        export GNUPGHOME="$(mktemp -d)"
-        chmod 700 "${GNUPGHOME}"
-        cat <<'AWSCLIKEY' | sed 's/^        //' > "aws-cli-public-key.asc"
-        -----BEGIN PGP PUBLIC KEY BLOCK-----
-
-        mQINBF2Cr7UBEADJZHcgusOJl7ENSyumXh85z0TRV0xJorM2B/JL0kHOyigQluUG
-        ZMLhENaG0bYatdrKP+3H91lvK050pXwnO/R7fB/FSTouki4ciIx5OuLlnJZIxSzx
-        PqGl0mkxImLNbGWoi6Lto0LYxqHN2iQtzlwTVmq9733zd3XfcXrZ3+LblHAgEt5G
-        TfNxEKJ8soPLyWmwDH6HWCnjZ/aIQRBTIQ05uVeEoYxSh6wOai7ss/KveoSNBbYz
-        gbdzoqI2Y8cgH2nbfgp3DSasaLZEdCSsIsK1u05CinE7k2qZ7KgKAUIcT/cR/grk
-        C6VwsnDU0OUCideXcQ8WeHutqvgZH1JgKDbznoIzeQHJD238GEu+eKhRHcz8/jeG
-        94zkcgJOz3KbZGYMiTh277Fvj9zzvZsbMBCedV1BTg3TqgvdX4bdkhf5cH+7NtWO
-        lrFj6UwAsGukBTAOxC0l/dnSmZhJ7Z1KmEWilro/gOrjtOxqRQutlIqG22TaqoPG
-        fYVN+en3Zwbt97kcgZDwqbuykNt64oZWc4XKCa3mprEGC3IbJTBFqglXmZ7l9ywG
-        EEUJYOlb2XrSuPWml39beWdKM8kzr1OjnlOm6+lpTRCBfo0wa9F8YZRhHPAkwKkX
-        XDeOGpWRj4ohOx0d2GWkyV5xyN14p2tQOCdOODmz80yUTgRpPVQUtOEhXQARAQAB
-        tCFBV1MgQ0xJIFRlYW0gPGF3cy1jbGlAYW1hem9uLmNvbT6JAlQEEwEIAD4CGwMF
-        CwkIBwIGFQoJCAsCBBYCAwECHgECF4AWIQT7Xbd/1cEYuAURraimMQrMRnJHXAUC
-        aGveYQUJDMpiLAAKCRCmMQrMRnJHXKBYD/9Ab0qQdGiO5hObchG8xh8Rpb4Mjyf6
-        0JrVo6m8GNjNj6BHkSc8fuTQJ/FaEhaQxj3pjZ3GXPrXjIIVChmICLlFuRXYzrXc
-        Pw0lniybypsZEVai5kO0tCNBCCFuMN9RsmmRG8mf7lC4FSTbUDmxG/QlYK+0IV/l
-        uJkzxWa+rySkdpm0JdqumjegNRgObdXHAQDWlubWQHWyZyIQ2B4U7AxqSpcdJp6I
-        S4Zds4wVLd1WE5pquYQ8vS2cNlDm4QNg8wTj58e3lKN47hXHMIb6CHxRnb947oJa
-        pg189LLPR5koh+EorNkA1wu5mAJtJvy5YMsppy2y/kIjp3lyY6AmPT1posgGk70Z
-        CmToEZ5rbd7ARExtlh76A0cabMDFlEHDIK8RNUOSRr7L64+KxOUegKBfQHb9dADY
-        qqiKqpCbKgvtWlds909Ms74JBgr2KwZCSY1HaOxnIr4CY43QRqAq5YHOay/mU+6w
-        hhmdF18vpyK0vfkvvGresWtSXbag7Hkt3XjaEw76BzxQH21EBDqU8WJVjHgU6ru+
-        DJTs+SxgJbaT3hb/vyjlw0lK+hFfhWKRwgOXH8vqducF95NRSUxtS4fpqxWVaw3Q
-        V2OWSjbne99A5EPEySzryFTKbMGwaTlAwMCwYevt4YT6eb7NmFhTx0Fis4TalUs+
-        j+c7Kg92pDx2uQ==
-        =OBAt
-        -----END PGP PUBLIC KEY BLOCK-----
-        AWSCLIKEY
-        gpg --batch --import "aws-cli-public-key.asc"
-        if [ "$(gpg --batch --with-colons --fingerprint 'AWS CLI Team <aws-cli@amazon.com>' | awk -F: '$1==\"fpr\" { print $10; exit }')" != "__AWS_CLI_GPG_FINGERPRINT__" ]; then
-          echo "Unexpected AWS CLI signing key fingerprint." >&2
-          exit 1
-        fi
-        gpg --batch --verify "awscliv2.zip.sig" "awscliv2.zip"
-        unzip -q "awscliv2.zip"
-        ./aws/install --update
-        rm -rf "${GNUPGHOME}" "aws-cli-public-key.asc" "awscliv2.zip.sig"
 
         mkdir -p /opt/microsoft/powershell/7
         curl -fsSL -o "powershell.tar.gz" "https://github.com/PowerShell/PowerShell/releases/download/__PWSH_TAG_VERSION__/powershell-__PWSH_ASSET_VERSION__-linux-__EC2_ARCHITECTURE__.tar.gz"
@@ -512,8 +468,6 @@ jobs:
         $pwshTagVersion = ${env:PWSH_VERSION}.StartsWith("v") ? ${env:PWSH_VERSION} : "v$(${env:PWSH_VERSION})"
 
         $userData = $userDataTemplate.
-          Replace("__AWS_CLI_VERSION__", ${env:AWS_CLI_VERSION}).
-          Replace("__AWS_CLI_GPG_FINGERPRINT__", ${env:AWS_CLI_GPG_FINGERPRINT}).
           Replace("__EC2_ARCHITECTURE__", ${env:EC2_ARCHITECTURE}).
           Replace("__GITHUB_SHA__", ${env:GITHUB_SHA}).
           Replace("__GIT_DOWNLOAD_VERSION__", $gitDownloadVersion).
