@@ -35,6 +35,7 @@ jobs:
       matrix:
         include:
           - os-name: linux
+            # renovate: datasource=github-runners depName=ubuntu depType=github-runner
             runner: ubuntu-24.04
 
     steps:
