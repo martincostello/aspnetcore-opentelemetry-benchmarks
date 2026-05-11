@@ -23,7 +23,7 @@ public class AspNetCoreBenchmarks : Benchmarks, IScenario
         tracing.AddAspNetCoreInstrumentation();
     }
 
-    public void Configure(WebApplication app)
+    public void Configure(WebApplication app, TelemetryConfiguration configuration)
     {
         app.MapGet("/ping", () => TypedResults.NoContent());
     }

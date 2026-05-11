@@ -12,7 +12,7 @@ public partial class LogBenchmarks : Benchmarks, IScenario
 {
     protected override Uri Endpoint { get; } = new("/logs", UriKind.Relative);
 
-    public void Configure(WebApplication app)
+    public void Configure(WebApplication app, TelemetryConfiguration configuration)
     {
         app.MapGet("/logs", () =>
         {

@@ -40,7 +40,7 @@ public class RedisBenchmarks : Benchmarks, IScenario
         tracing.AddRedisInstrumentation();
     }
 
-    public void Configure(WebApplication app)
+    public void Configure(WebApplication app, TelemetryConfiguration configuration)
     {
         app.MapGet("/redis", async (IDatabase database) =>
         {

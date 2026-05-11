@@ -56,7 +56,7 @@ public sealed class AppServer : IAsyncDisposable
             KeyValuePair.Create<string, string?>("OTEL_SDK_DISABLED", configuration.Disabled.ToString()),
         };
 
-        if (configuration.EnableAny)
+        if (configuration.EnableAny && !scenario.DisableCollector)
         {
             _collector = new CollectorFixture();
             await _collector.StartAsync();
@@ -109,7 +109,7 @@ public sealed class AppServer : IAsyncDisposable
 
         _app = builder.Build();
 
-        scenario.Configure(_app);
+        scenario.Configure(_app, configuration);
 
         await _app.StartAsync();
 

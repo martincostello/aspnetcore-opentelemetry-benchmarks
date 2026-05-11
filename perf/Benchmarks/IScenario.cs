@@ -18,6 +18,8 @@ public interface IScenario
 {
     IReadOnlyCollection<ContainerFixture> Containers { get; }
 
+    bool DisableCollector => false;
+
     void Configure(ILoggingBuilder builder)
     {
         builder.ClearProviders();
@@ -89,7 +91,7 @@ public interface IScenario
         Configure(builder.WebHost);
     }
 
-    void Configure(WebApplication app)
+    void Configure(WebApplication app, TelemetryConfiguration configuration)
     {
         app.MapGet("/", () => TypedResults.Text("ASP.NET Core OpenTelemetry Benchmarks"));
     }

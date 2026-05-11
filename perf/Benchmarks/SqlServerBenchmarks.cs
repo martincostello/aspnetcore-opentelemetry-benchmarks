@@ -47,7 +47,7 @@ public class SqlServerBenchmarks : Benchmarks, IScenario
     }
 #pragma warning restore IL2026
 
-    public void Configure(WebApplication app)
+    public void Configure(WebApplication app, TelemetryConfiguration configuration)
     {
         app.MapGet("/sqlserver", async (SqlConnection connection) =>
         {

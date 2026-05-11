@@ -57,7 +57,7 @@ public class AwsBenchmarks : Benchmarks, IScenario
         tracing.AddAWSInstrumentation();
     }
 
-    public void Configure(WebApplication app)
+    public void Configure(WebApplication app, TelemetryConfiguration configuration)
     {
         app.MapGet("/s3", async (IAmazonS3 client) =>
         {
