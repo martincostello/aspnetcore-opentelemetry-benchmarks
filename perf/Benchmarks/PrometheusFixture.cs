@@ -91,19 +91,19 @@ public sealed class PrometheusFixture : ContainerFixture<IContainer>
           ]
           """;
 
-    private static void WriteConfigurationFile(string path, string contents)
+    private static void WriteConfigurationFile(string path, string contents, bool readOnly = true)
     {
         File.WriteAllText(path, contents);
 
 #if NET
         if (OperatingSystem.IsLinux())
         {
-            var mode = UnixFileMode.UserRead | UnixFileMode.GroupRead | UnixFileMode.OtherRead;
+            var mode = (readOnly ? UnixFileMode.UserRead : UnixFileMode.UserWrite) | UnixFileMode.GroupRead | UnixFileMode.OtherRead;
             File.SetUnixFileMode(path, mode);
         }
 #endif
     }
 
     private void UpdateServiceDiscoveryConfiguration(int port)
-        => WriteConfigurationFile(_serviceDiscoveryFilePath, CreateServiceDiscoveryConfiguration(port));
+        => WriteConfigurationFile(_serviceDiscoveryFilePath, CreateServiceDiscoveryConfiguration(port), readOnly: false);
 }
