@@ -22,7 +22,6 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Testcontainers" />
-    <PackageReference Include="Testcontainers.LocalStack" />
     <PackageReference Include="Testcontainers.MsSql" />
     <PackageReference Include="Testcontainers.Redis" />
   </ItemGroup>
