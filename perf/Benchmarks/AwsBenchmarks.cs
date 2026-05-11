@@ -16,7 +16,7 @@ public class AwsBenchmarks : Benchmarks, IScenario
 {
     private const string BucketName = "benchmarks";
 
-    public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new LocalStackFixture()];
+    public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new FlociFixture()];
 
     protected override Uri Endpoint { get; } = new("/s3", UriKind.Relative);
 
@@ -42,12 +42,12 @@ public class AwsBenchmarks : Benchmarks, IScenario
 
     public void Configure(List<KeyValuePair<string, string?>> configuration)
     {
-        configuration.Add(KeyValuePair.Create<string, string?>("AWS_ACCESS_KEY_ID", "localstack"));
-        configuration.Add(KeyValuePair.Create<string, string?>("AWS_SECRET_ACCESS_KEY", "localstack"));
+        configuration.Add(KeyValuePair.Create<string, string?>("AWS_ACCESS_KEY_ID", "floci"));
+        configuration.Add(KeyValuePair.Create<string, string?>("AWS_SECRET_ACCESS_KEY", "floci"));
         configuration.Add(KeyValuePair.Create<string, string?>("AWS_REGION", "us-east-1"));
 
-        var localStack = Containers.OfType<LocalStackFixture>().Single();
-        var endpoint = localStack.GetBaseAddress(4566).ToString();
+        var floci = Containers.OfType<FlociFixture>().Single();
+        var endpoint = floci.GetBaseAddress(4566).ToString();
 
         configuration.Add(KeyValuePair.Create<string, string?>("AWS_ENDPOINT_URL_S3", endpoint));
     }
