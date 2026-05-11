@@ -19,25 +19,24 @@ The benchmarks in this project are intended to provide a realistic example of th
 performance overhead of using OpenTelemetry in an ASP.NET Core application. The benchmarks are not
 intended to be a comprehensive performance analysis of OpenTelemetry, but rather to provide a simple
 comparison of the overhead of using different combinations of OpenTelemetry telemetry signals
-(lots, metrics, traces) in a typical ASP.NET Core application for real workloads.
+(logs, metrics, traces) in a typical ASP.NET Core application for real workloads.
 
 These benchmarks are not intended to be microbenchmarks of the individual OpenTelemetry components,
-such Microbenchmarks are left to the respective OpenTelemetry projects themselves.
+such microbenchmarks are left to the respective OpenTelemetry projects themselves.
 
 A number of the benchmarks include instrumentation for remote services, such as AWS, SQL Server and Redis.
 These are included to provide a more realistic example of the overhead of using OpenTelemetry in a typical
 application, albeit run locally as Docker containers.
 
 Where telemetry signals are enabled, the benchmarks are configured to export telemetry data to a
-local [OpenTelemetry Collector][opentelemetry-collector] instance (via [grafana/otel-lgtm][grafana-lgtm])
-using the OpenTelemetry Protocol (OTLP) exporter. This is intended to provide a realistic example of the
+local [OpenTelemetry Collector][opentelemetry-collector] instance (using [grafana/otel-lgtm][grafana-lgtm])
+with the OpenTelemetry Protocol (OTLP) exporter. This is intended to provide a realistic example of the
 overhead of exporting telemetry data to a remote service, such as [Grafana Cloud][grafana-cloud] or
 [Prometheus][prometheus].
 
 Due to this external dependency, the collector configuration could induce backpressure on the SDK exporter
 during benchmarks and skew the results. This side-effect is accepted as part of the benchmarks, as it is
-intended to mirror a real application's configuration rather than to solely measure the OpenTelemetry-related
-code instead.
+intended to mirror a real application's configuration rather than to solely measure the OpenTelemetry-related code.
 
 ## Implementation
 
@@ -69,7 +68,7 @@ The current scenarios included in the benchmarks are:
 | HTTP Client | Performs a loopback request to itself using [`HttpClient`][httpclient] with [HTTP instrumentation][http-instrumentation] enabled. |
 | Redis | Pings a Redis instance using [StackExchange.Redis][stackexchange.redis] with [Redis instrumentation][redis-instrumentation] enabled. |
 | SQL Server | Executes an SQL query using [`SqlClient`][sqlclient] with [SQL Client instrumentation][sqlclient-instrumentation] enabled. |
-| Kitchen Sink | A scenario that combines all of the other scenarios. |
+| Kitchen Sink | A scenario that combines all of the above scenarios. |
 
 ## Building and Running
 
@@ -113,8 +112,8 @@ This project is licensed under the [Apache 2.0][license] license.
 [activity]: https://learn.microsoft.com/dotnet/api/system.diagnostics.activity
 [activitysource]: https://learn.microsoft.com/dotnet/api/system.diagnostics.activitysource
 [aspnetcore]: https://github.com/dotnet/aspnetcore
-[aws-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AWS
-[aspnetcore-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
+[aws-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AWS#readme
+[aspnetcore-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore#readme
 [badge-dotnet]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2Fglobal.json&query=%24.sdk.version&logo=.net&label=version
 [badge-aspnetcore]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.AspNetCore'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-aws]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.AWS'%5D%2F%40Version&logo=opentelemetry&label=version
@@ -131,7 +130,7 @@ This project is licensed under the [Apache 2.0][license] license.
 [dotnet-sdk]: https://dotnet.microsoft.com/download
 [grafana-cloud]: https://grafana.com/solutions/opentelemetry/
 [grafana-lgtm]: https://github.com/grafana/docker-otel-lgtm
-[http-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Http
+[http-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Http#readme
 [httpclient]: https://learn.microsoft.com/dotnet/api/system.net.http.httpclient
 [ilogger]: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.ilogger
 [issues]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks/issues
@@ -146,9 +145,9 @@ This project is licensed under the [Apache 2.0][license] license.
 [package-sqlclient]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.SqlClient
 [package-redis]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.StackExchangeRedis
 [prometheus]: https://prometheus.io/docs/guides/opentelemetry/
-[redis-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
+[redis-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis#readme
 [repo]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks
 [results]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks/actions/workflows/benchmark.yml?query=branch%3Amain+event%3Apush
 [sqlclient]: https://github.com/dotnet/sqlclient
-[sqlclient-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.SqlClient
+[sqlclient-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.SqlClient#readme
 [stackexchange.redis]: https://www.nuget.org/packages/StackExchange.Redis/
