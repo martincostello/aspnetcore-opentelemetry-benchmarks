@@ -42,10 +42,10 @@ intended to mirror a real application's configuration rather than to solely meas
 
 The benchmarks are implemented using [BenchmarkDotNet][benchmarkdotnet] as a .NET console application.
 The benchmarks self-host an ASP.NET Core application using Kestrel and make HTTP requests to the application
-using the `HttpClient` class. Each benchmark implements a "scenario" that excercises different code paths
+using the `HttpClient` class. Each benchmark implements a "scenario" that exercises different code paths
 that affect different common use cases for a web application.
 
-Each scenario is run for 4 benchmarks that cover no telemetry, logs only, metrics only, traces only and all
+Each scenario is run for 5 benchmarks that cover no telemetry, logs only, metrics only, traces only and all
 three telemetry signals enabled. The benchmark results can then be used to infer the overhead of each telemetry
 signal type for the workload that a particular scenario exercises.
 
@@ -72,7 +72,7 @@ The current scenarios included in the benchmarks are:
 
 ## Building and Running
 
-Compiling the benchmarks yourself requires Git and the [.NET SDK][dotnet-sdk] to be installed.
+Compiling the benchmarks yourself requires [Docker][docker], Git and the [.NET SDK][dotnet-sdk] to be installed.
 
 To run the benchmarks locally from a terminal/command-line, run the
 following set of commands:
@@ -127,6 +127,7 @@ This project is licensed under the [Apache 2.0][license] license.
 [build-badge]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks/actions/workflows/build.yml/badge.svg?branch=main&event=push
 [build-status]: https://github.com/martincostello/aspnetcore-opentelemetry-benchmarks/actions?query=workflow%3Abuild+branch%3Amain+event%3Apush
 [counter]: https://learn.microsoft.com/dotnet/api/system.diagnostics.metrics.counter-1
+[docker]: https://docs.docker.com/get-started/
 [dotnet-sdk]: https://dotnet.microsoft.com/download
 [grafana-cloud]: https://grafana.com/solutions/opentelemetry/
 [grafana-lgtm]: https://github.com/grafana/docker-otel-lgtm
