@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
@@ -17,14 +17,7 @@ public class PrometheusBenchmarks : Benchmarks, IScenario
 {
     public override IReadOnlyCollection<ContainerFixture> Containers { get; } = [new PrometheusFixture()];
 
-    public bool DisableCollector => true;
-
     protected override Uri Endpoint { get; } = new("/prometheus", UriKind.Relative);
-
-    public void Configure(ILoggingBuilder builder)
-    {
-        builder.AddConsole().SetMinimumLevel(LogLevel.Trace);
-    }
 
     public void Configure(IServiceCollection services)
     {
@@ -45,6 +38,11 @@ public class PrometheusBenchmarks : Benchmarks, IScenario
         {
             telemetry.WithMetrics(Configure);
         }
+
+        if (configuration.EnableTraces)
+        {
+            telemetry.WithTracing((p) => p.AddOtlpExporter());
+        }
     }
 
     public void Configure(MeterProviderBuilder metrics)
@@ -53,12 +51,10 @@ public class PrometheusBenchmarks : Benchmarks, IScenario
                .AddPrometheusExporter();
     }
 
-    public void Configure(WebApplication app, TelemetryConfiguration configuration)
+    public void Configure(WebApplication app)
     {
-        if (configuration.EnableMetrics)
-        {
-            app.MapPrometheusScrapingEndpoint();
-        }
+        // TODO Depends on https://github.com/open-telemetry/opentelemetry-dotnet/pull/7273
+        app.MapPrometheusScrapingEndpoint();
 
         app.MapGet("/prometheus", (MetricBenchmarks.CustomMetrics metrics) =>
         {

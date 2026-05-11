@@ -26,7 +26,7 @@ public class MetricBenchmarks : Benchmarks, IScenario
         metrics.AddMeter(MeterName);
     }
 
-    public void Configure(WebApplication app, TelemetryConfiguration configuration)
+    public void Configure(WebApplication app)
     {
         app.MapGet("/metrics", (CustomMetrics metrics) =>
         {

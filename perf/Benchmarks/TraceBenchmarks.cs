@@ -20,7 +20,7 @@ public class TraceBenchmarks : Benchmarks, IScenario
         tracing.AddSource(CustomSource.Name);
     }
 
-    public void Configure(WebApplication app, TelemetryConfiguration configuration)
+    public void Configure(WebApplication app)
     {
         app.MapGet("/traces", () =>
         {
