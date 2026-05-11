@@ -12,10 +12,10 @@ public sealed class CollectorFixture : ContainerFixture<IContainer>
 
     protected override IContainer CreateContainer() =>
         new ContainerBuilder(GetImage())
-            .WithPortBinding(3000)
-            .WithPortBinding(4317)
-            .WithPortBinding(4318)
-            .WithPortBinding(9090)
+            .WithPortBinding(3000, assignRandomHostPort: true)
+            .WithPortBinding(4317, assignRandomHostPort: true)
+            .WithPortBinding(4318, assignRandomHostPort: true)
+            .WithPortBinding(9090, assignRandomHostPort: true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(3000)))
             .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(4317))
             .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(4318))

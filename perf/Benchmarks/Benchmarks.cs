@@ -102,12 +102,14 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
         _disposed = true;
     }
 
+    protected virtual HttpClient CreateHttpClient(AppServer app) => app.CreateHttpClient();
+
     protected virtual async Task StartServer(TelemetryConfiguration configuration)
     {
         if (_app is not null)
         {
             await _app.StartAsync(this, configuration);
-            _client = _app.CreateHttpClient();
+            _client = CreateHttpClient(_app);
             await OnServerStartedAsync();
             await WarmupAsync();
         }
