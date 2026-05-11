@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
-internal sealed class AppServer : IAsyncDisposable
+public sealed class AppServer : IAsyncDisposable
 {
     private WebApplication? _app;
     private Uri? _baseAddress;

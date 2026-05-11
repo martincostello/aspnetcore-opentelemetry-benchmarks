@@ -11,7 +11,7 @@ public abstract class ContainerFixture : IAsyncDisposable
 
     protected abstract string DockerfileName { get; }
 
-    public async ValueTask DisposeAsync()
+    public virtual async ValueTask DisposeAsync()
     {
         await Container.DisposeAsync();
         GC.SuppressFinalize(this);

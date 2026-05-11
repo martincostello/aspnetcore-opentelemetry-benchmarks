@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,11 @@ public interface IScenario
     }
 
     void Configure(IServiceCollection services)
+    {
+        // No-op
+    }
+
+    void Configure(IWebHostBuilder builder)
     {
         // No-op
     }
@@ -80,6 +86,7 @@ public interface IScenario
         }
 
         Configure(builder.Services);
+        Configure(builder.WebHost);
     }
 
     void Configure(WebApplication app)
