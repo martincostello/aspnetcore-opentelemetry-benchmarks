@@ -27,10 +27,4 @@ public class AspNetCoreBenchmarks : Benchmarks, IScenario
     {
         app.MapGet("/ping", () => TypedResults.NoContent());
     }
-
-    protected override async Task StartServer(TelemetryConfiguration configuration)
-    {
-        AppContext.SetSwitch("Microsoft.AspNetCore.Hosting.SuppressActivityOpenTelemetryData", false);
-        await base.StartServer(configuration);
-    }
 }
