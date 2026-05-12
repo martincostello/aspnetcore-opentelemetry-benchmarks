@@ -66,9 +66,10 @@ The current scenarios included in the benchmarks are:
 | ASP.NET Core | Implements a no-op endpoint with [ASP.NET Core instrumentation][aspnetcore-instrumentation] enabled. |
 | AWS | Uses the AWS S3 SDK with [AWS instrumentation][aws-instrumentation] enabled. |
 | HTTP Client | Performs a loopback request to itself using [`HttpClient`][httpclient] with [HTTP instrumentation][http-instrumentation] enabled. |
+| Prometheus | Uses a [Prometheus][prometheus] exporter for metrics instead of OTLP. |
 | Redis | Pings a Redis instance using [StackExchange.Redis][stackexchange.redis] with [Redis instrumentation][redis-instrumentation] enabled. |
 | SQL Server | Executes an SQL query using [`SqlClient`][sqlclient] with [SQL Client instrumentation][sqlclient-instrumentation] enabled. |
-| Kitchen Sink | A scenario that combines all of the above scenarios. |
+| Kitchen Sink | A scenario that combines all of the above scenarios (except Prometheus). |
 
 ## Building and Running
 
