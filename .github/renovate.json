@@ -8,8 +8,15 @@
     },
     {
       "extends": ["monorepo:opentelemetry-dotnet", "monorepo:opentelemetry-dotnet-contrib"],
-      "description": ["Disable prerelease versions of .NET OpenTelemetry packages"],
+      "description": ["Disable prerelease versions of .NET OpenTelemetry packages when a version is stable"],
       "ignoreUnstable": true
+    },
+    {
+      "matchManagers": ["nuget"],
+      "matchPackageNames": ["/^OpenTelemetry\\..*/"],
+      "description": ["Group updates for OpenTelemetry NuGet prerelease packages"],
+      "ignoreUnstable": false,
+      "groupName": "OpenTelemetry"
     }
   ]
 }
