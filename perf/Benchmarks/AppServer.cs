@@ -1,4 +1,4 @@
-// Copyright (c) Martin Costello, 2026. All rights reserved.
+﻿// Copyright (c) Martin Costello, 2026. All rights reserved.
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
 using Microsoft.AspNetCore.Builder;
@@ -14,7 +14,7 @@ public sealed class AppServer : IAsyncDisposable
 {
     private WebApplication? _app;
     private Uri? _baseAddress;
-    private CollectorFixture? _collector;
+    private IAsyncDisposable? _collector;
     private bool _disposed;
 
     public Uri BaseAddress => _baseAddress ?? throw new InvalidOperationException("The server has not started.");
@@ -58,11 +58,7 @@ public sealed class AppServer : IAsyncDisposable
 
         if (configuration.EnableAny)
         {
-            _collector = new CollectorFixture();
-            await _collector.StartAsync();
-
-            var endpoint = _collector.GetBaseAddress(4318);
-            var protocol = "http/protobuf";
+            (_collector, var endpoint, var protocol) = await StartCollectorAsync();
 
             if (configuration.EnableAll)
             {
@@ -181,4 +177,33 @@ public sealed class AppServer : IAsyncDisposable
 
     private static string GetContentRoot() =>
         GetRepositoryPath() is { } repoPath ? Path.GetFullPath(Path.Join(repoPath, "perf", "Benchmarks")) : string.Empty;
+
+    private static async Task<(IAsyncDisposable Collector, Uri Endpoint, string Protocol)> StartCollectorAsync()
+    {
+        const string Protocol = "http/protobuf";
+
+        if (Environment.GetEnvironmentVariable("BENCHMARKS_USE_OTLP_COLLECTOR") is "true")
+        {
+            var collector = new CollectorFixture();
+
+            try
+            {
+                await collector.StartAsync();
+
+                var endpoint = collector.GetBaseAddress(4318);
+
+                return (collector, endpoint, Protocol);
+            }
+            catch (Exception)
+            {
+                await collector.DisposeAsync();
+                throw;
+            }
+        }
+        else
+        {
+            var collector = await StubOtlpCollector.StartAsync();
+            return (collector, collector.Endpoint, Protocol);
+        }
+    }
 }
