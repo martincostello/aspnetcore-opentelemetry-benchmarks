@@ -3,7 +3,10 @@
 
 using System.Diagnostics;
 using System.Net;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
@@ -28,24 +31,27 @@ internal sealed class StubOtlpCollector : IAsyncDisposable
 
     public static async Task<int> RunAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        int port = GetPort(args);
-
-        using var listener = new HttpListener();
-
         try
         {
-            listener.Prefixes.Add($"http://localhost:{port}/");
-            listener.Start();
+            int port = GetPort(args);
+            var builder = WebApplication.CreateSlimBuilder();
 
-            while (!cancellationToken.IsCancellationRequested)
+            builder.WebHost.UseUrls($"http://localhost:{port}");
+
+            var app = builder.Build();
+
+            app.Map("/{**path}", Handler);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
             {
-                var context = await listener.GetContextAsync().WaitAsync(cancellationToken);
-
-                var response = context.Response;
-
-                response.StatusCode = StatusCodes.Status200OK;
-                response.ContentLength64 = 0;
-                response.OutputStream.Close();
+                cancellationToken.Register(app.Lifetime.StopApplication);
+                await app.RunAsync();
+            }
+            finally
+            {
+                await app.DisposeAsync();
             }
         }
         catch (OperationCanceledException)
@@ -59,6 +65,12 @@ internal sealed class StubOtlpCollector : IAsyncDisposable
         }
 
         return 0;
+
+        static async Task Handler([FromRoute] string? path, HttpContext context)
+        {
+            await context.Request.BodyReader.CopyToAsync(Stream.Null, context.RequestAborted);
+            context.Response.StatusCode = StatusCodes.Status200OK;
+        }
     }
 
     public static async Task<StubOtlpCollector> StartAsync()
@@ -89,8 +101,15 @@ internal sealed class StubOtlpCollector : IAsyncDisposable
         {
             if (!_process.HasExited)
             {
-                _process.Kill(entireProcessTree: true);
-                await _process.WaitForExitAsync();
+                try
+                {
+                    _process.Kill(entireProcessTree: true);
+                    await _process.WaitForExitAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    // The process exited after HasExited was checked.
+                }
             }
         }
         finally
@@ -163,7 +182,13 @@ internal sealed class StubOtlpCollector : IAsyncDisposable
             return 4318; // Default OTLP port.
         }
 
-        return int.Parse(args[index + 1], CultureInfo.InvariantCulture);
+        if (!int.TryParse(args[index + 1], CultureInfo.InvariantCulture, out int port) ||
+            port is < IPEndPoint.MinPort or > IPEndPoint.MaxPort)
+        {
+            throw new InvalidOperationException($"The OTLP receiver port '{args[index + 1]}' is invalid.");
+        }
+
+        return port;
     }
 
     private async Task WaitUntilReadyAsync()
