@@ -41,7 +41,7 @@ public class PrometheusBenchmarks : Benchmarks, IScenario
 
         if (configuration.EnableTraces)
         {
-            telemetry.WithTracing((p) => p.AddOtlpExporter());
+            telemetry.WithTracing(Configure);
         }
     }
 
@@ -51,10 +51,17 @@ public class PrometheusBenchmarks : Benchmarks, IScenario
                .AddPrometheusExporter();
     }
 
+    public void Configure(TracerProviderBuilder tracing)
+    {
+        tracing.AddOtlpExporter();
+    }
+
     public void Configure(WebApplication app)
     {
-        // TODO Depends on https://github.com/open-telemetry/opentelemetry-dotnet/pull/7273
-        app.MapPrometheusScrapingEndpoint();
+        if (app.Services.GetService<MeterProvider>() is { })
+        {
+            app.MapPrometheusScrapingEndpoint();
+        }
 
         app.MapGet("/prometheus", (MetricBenchmarks.CustomMetrics metrics) =>
         {
