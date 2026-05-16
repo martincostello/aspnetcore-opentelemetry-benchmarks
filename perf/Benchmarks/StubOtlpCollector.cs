@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
@@ -36,6 +37,7 @@ internal sealed class StubOtlpCollector : IAsyncDisposable
             int port = GetPort(args);
             var builder = WebApplication.CreateSlimBuilder();
 
+            builder.Logging.SetMinimumLevel(LogLevel.Warning);
             builder.WebHost.UseUrls($"http://localhost:{port}");
 
             var app = builder.Build();
