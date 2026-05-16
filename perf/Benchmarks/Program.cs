@@ -4,5 +4,10 @@
 using BenchmarkDotNet.Running;
 using MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
+if (StubOtlpCollector.IsReceiverMode(args))
+{
+    return await StubOtlpCollector.RunAsync(args);
+}
+
 var summaries = BenchmarkSwitcher.FromAssembly(typeof(Benchmarks).Assembly).Run(args: args);
 return summaries.SelectMany(p => p.Reports).Any((p) => !p.Success) ? 1 : 0;
