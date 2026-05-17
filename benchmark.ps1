@@ -5,7 +5,8 @@
 
 param(
     [Parameter(Mandatory = $false)][string] $Filter = "*",
-    [Parameter(Mandatory = $false)][string] $Job = ""
+    [Parameter(Mandatory = $false)][string] $Job = "",
+    [Parameter(Mandatory = $false)][switch] $EnableProfiler
 )
 
 $ErrorActionPreference = "Stop"
@@ -89,6 +90,11 @@ if (-Not [string]::IsNullOrEmpty($Job)) {
 if (-Not [string]::IsNullOrEmpty(${env:GITHUB_SHA})) {
     $additionalArgs += "--exporters"
     $additionalArgs += "json"
+}
+
+if ($EnableProfiler) {
+    $additionalArgs += "--profiler"
+    $additionalArgs += "EP"
 }
 
 if ($installDotNetSdk) {
