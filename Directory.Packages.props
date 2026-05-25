@@ -7,14 +7,14 @@
     <PackageVersion Include="AWSSDK.S3" Version="4.0.23.3" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.4-alpha.0.152" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.3-beta.1.150" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.4-alpha.0.152" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.3-alpha.0.202" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.15.2-alpha.0.203" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.2-alpha.0.190" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.3-alpha.0.184" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.1.183" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.4-alpha.0.156" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.3-beta.1.154" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.4-alpha.0.156" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.3-alpha.0.208" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.15.2-alpha.0.209" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.2-alpha.0.196" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.3-alpha.0.190" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.1.189" />
     <PackageVersion Include="StackExchange.Redis" Version="2.13.10" />
     <PackageVersion Include="Testcontainers" Version="4.12.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.12.0" />
