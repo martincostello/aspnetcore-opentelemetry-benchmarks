@@ -7,14 +7,14 @@
     <PackageVersion Include="AWSSDK.S3" Version="4.0.23.6" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.4-alpha.0.166" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.3-beta.1.164" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.4-alpha.0.166" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.3-alpha.0.225" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.15.2-alpha.0.226" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.2-alpha.0.213" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.3-alpha.0.207" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.2.5" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.4-alpha.0.167" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.3-beta.1.165" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.4-alpha.0.167" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.3-alpha.0.227" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.15.2-alpha.0.228" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.2-alpha.0.215" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.3-alpha.0.209" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.2.7" />
     <PackageVersion Include="StackExchange.Redis" Version="2.13.17" />
     <PackageVersion Include="Testcontainers" Version="4.12.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.12.0" />
