@@ -1,1 +1,1 @@
-FROM floci/floci:1.5.22@sha256:326444ab4096adeb75507157c422d9abb5b610314f63cce29ea3efed1c6b0fab
+FROM floci/floci:1.5.23@sha256:c88ec20bf221630dd195d38a14eeb0ac52ddfa72c37ebb3c8aa17f63ae27c5f2
