@@ -2,7 +2,6 @@
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
 using Amazon.S3;
-using Amazon.S3.Model;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -70,6 +69,6 @@ public class AwsBenchmarks : Benchmarks, IScenario
     protected override async Task OnServerStartedAsync()
     {
         var client = Services.GetRequiredService<IAmazonS3>();
-        await client.PutBucketAsync(new PutBucketRequest() { BucketName = BucketName });
+        await client.PutBucketAsync(BucketName);
     }
 }
