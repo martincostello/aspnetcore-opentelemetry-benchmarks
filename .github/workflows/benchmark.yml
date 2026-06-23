@@ -30,18 +30,19 @@ jobs:
 
     permissions:
       contents: read
+      id-token: write
 
     steps:
 
     - name: Checkout code
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         filter: 'tree:0'
         persist-credentials: false
         show-progress: false
 
     - name: Setup .NET SDK
-      uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+      uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
 
     - name: Run benchmarks
       shell: pwsh
@@ -62,15 +63,22 @@ jobs:
         $repoName = ${env:GITHUB_REPOSITORY}.Split("/")[-1]
         "repo-name=${repoName}" >> ${env:GITHUB_OUTPUT}
 
+    - name: Get GitHub token
+      id: get-github-token
+      # zizmor: ignore[ref-version-mismatch] False positive
+      uses: martincostello/github-automation/actions/get-github-token@279f5d3cc244dfdd9bb1197d2ab6996c37cb4486 # get-github-token/v4.3.3
+      with:
+        profile-name: benchmarks
+
     - name: Publish results
-      uses: martincostello/benchmarkdotnet-results-publisher@0f2a458a28dbd963b1bcb029efaec245b677c7b3 # v2.0.3
+      uses: martincostello/benchmarkdotnet-results-publisher@b8fe7bb9691c4fdcda7dee630aa09493e81004b8 # v2.0.5
       with:
         branch: ${{ github.ref_name }}
         comment-on-threshold: true
         name: ASP.NET Core OpenTelemetry Benchmarks
         output-file-path: '${{ steps.get-repo-name.outputs.repo-name }}/data.json'
         repo: '${{ github.repository_owner }}/benchmarks'
-        repo-token: ${{ secrets.BENCHMARKS_TOKEN }}
+        repo-token: ${{ steps.get-github-token.outputs.token }}
 
     - name: Output summary
       shell: pwsh
