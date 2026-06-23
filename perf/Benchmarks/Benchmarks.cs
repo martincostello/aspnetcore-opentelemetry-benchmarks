@@ -1,7 +1,6 @@
 // Copyright (c) Martin Costello, 2026. All rights reserved.
 // Licensed under the Apache 2.0 license. See the LICENSE file in the project root for full license information.
 
-using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Diagnosers;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
@@ -54,30 +53,30 @@ public abstract class Benchmarks : IAsyncDisposable, IScenario
 
     [Benchmark(Baseline = true, OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Baseline")]
-    public ConfiguredTaskAwaitable<int> Baseline()
-        => SendRequestsAsync().ConfigureAwait(false);
+    public Task<int> Baseline()
+        => SendRequestsAsync();
 
     [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Logs")]
-    public ConfiguredTaskAwaitable<int> Logs()
-        => SendRequestsAsync().ConfigureAwait(false);
+    public Task<int> Logs()
+        => SendRequestsAsync();
 
     [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Metrics")]
-    public ConfiguredTaskAwaitable<int> Metrics()
-        => SendRequestsAsync().ConfigureAwait(false);
+    public Task<int> Metrics()
+        => SendRequestsAsync();
 
     [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Traces")]
-    public ConfiguredTaskAwaitable<int> Traces()
-        => SendRequestsAsync().ConfigureAwait(false);
+    public Task<int> Traces()
+        => SendRequestsAsync();
 
     [Benchmark(OperationsPerInvoke = OperationsPerInvoke)]
     [BenchmarkCategory("Logs")]
     [BenchmarkCategory("Metrics")]
     [BenchmarkCategory("Traces")]
-    public ConfiguredTaskAwaitable<int> AllTelemetry()
-        => SendRequestsAsync().ConfigureAwait(false);
+    public Task<int> AllTelemetry()
+        => SendRequestsAsync();
 
     public async ValueTask DisposeAsync()
     {
