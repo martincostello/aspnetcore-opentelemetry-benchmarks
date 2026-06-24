@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using StackExchange.Redis;
-using static MartinCostello.AspNetCoreOpenTelemetry.Benchmarks.EFCoreBenchmarks;
+using BenchmarkContext = MartinCostello.AspNetCoreOpenTelemetry.Benchmarks.EFCoreBenchmarks.BenchmarkContext;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
