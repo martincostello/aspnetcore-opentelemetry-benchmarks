@@ -50,8 +50,8 @@ public class EFCoreBenchmarks : Benchmarks, IScenario
 
         app.MapGet("/efcore", async ([FromServices] BenchmarkContext context) =>
         {
-            var items = await context.Items.OrderBy((p) => p.Name).ToListAsync();
-            return TypedResults.Ok(items.Count);
+            var count = await context.Items.OrderBy((p) => p.Name).CountAsync();
+            return TypedResults.Ok(count);
         });
     }
 

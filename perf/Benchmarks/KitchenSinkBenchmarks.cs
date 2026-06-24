@@ -172,7 +172,7 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
             command.CommandText = "SELECT 1";
             _ = await command.ExecuteScalarAsync();
 
-            _ = await context.Items.OrderBy((p) => p.Name).ToListAsync();
+            _ = await context.Items.OrderBy((p) => p.Name).CountAsync();
 
             return TypedResults.NoContent();
         });
