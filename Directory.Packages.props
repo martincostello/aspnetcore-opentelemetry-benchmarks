@@ -4,13 +4,8 @@
     <GlobalPackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
-<<<<<<< BenchmarkDotNet-0.16.0
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.25.3" />
-    <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
-=======
     <PackageVersion Include="AWSSDK.S3" Version="4.0.100.2" />
-    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
->>>>>>> main
+    <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.1-alpha.0.68" />
