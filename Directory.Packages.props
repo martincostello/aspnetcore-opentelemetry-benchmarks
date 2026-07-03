@@ -5,7 +5,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="AWSSDK.S3" Version="4.0.25.3" />
-    <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-nightly.20260623.568" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.16.0-beta.1.31" />
