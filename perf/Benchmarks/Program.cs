@@ -9,5 +9,5 @@ if (StubOtlpCollector.IsReceiverMode(args))
     return await StubOtlpCollector.RunAsync(args);
 }
 
-var summaries = BenchmarkSwitcher.FromAssembly(typeof(Benchmarks).Assembly).Run(args: args);
+var summaries = await BenchmarkSwitcher.FromAssembly(typeof(Benchmarks).Assembly).RunAsync(args: args);
 return summaries.SelectMany(p => p.Reports).Any((p) => !p.Success) ? 1 : 0;
