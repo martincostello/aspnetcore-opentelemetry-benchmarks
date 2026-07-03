@@ -1,23 +1,25 @@
 <Project>
   <ItemGroup>
-    <GlobalPackageReference Include="MartinCostello.BuildKit" Version="0.8.10" />
+    <GlobalPackageReference Include="MartinCostello.BuildKit" Version="0.8.11" />
     <GlobalPackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="AWSSDK.S3" Version="4.0.25.3" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.16.0-beta.1.31" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.16.0-beta.1.66" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.3-alpha.0.291" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.16.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.2-alpha.0.279" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.3-alpha.0.273" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.15.1-beta.2.71" />
-    <PackageVersion Include="StackExchange.Redis" Version="3.0.0" />
-    <PackageVersion Include="Testcontainers" Version="4.12.0" />
-    <PackageVersion Include="Testcontainers.MsSql" Version="4.12.0" />
-    <PackageVersion Include="Testcontainers.Redis" Version="4.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.16.0-beta.1.48" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.16.0-beta.1.37" />
+    <PackageVersion Include="StackExchange.Redis" Version="3.0.11" />
+    <PackageVersion Include="Testcontainers" Version="4.13.0" />
+    <PackageVersion Include="Testcontainers.MsSql" Version="4.13.0" />
+    <PackageVersion Include="Testcontainers.Redis" Version="4.13.0" />
   </ItemGroup>
 </Project>

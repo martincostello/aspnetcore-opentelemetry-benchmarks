@@ -65,6 +65,7 @@ The current scenarios included in the benchmarks are:
 | Traces | Creates a custom [`Activity`][activity] using [`ActivitySource`][activitysource]. |
 | ASP.NET Core | Implements a no-op endpoint with [ASP.NET Core instrumentation][aspnetcore-instrumentation] enabled. |
 | AWS | Uses the AWS S3 SDK with [AWS instrumentation][aws-instrumentation] enabled. |
+| EFCore | Executes an SQL query using [`EFCore`][efcore] with [EFCore instrumentation][efcore-instrumentation] enabled. |
 | HTTP Client | Performs a loopback request to itself using [`HttpClient`][httpclient] with [HTTP instrumentation][http-instrumentation] enabled. |
 | Prometheus | Uses a [Prometheus][prometheus] exporter for metrics instead of OTLP. |
 | Redis | Pings a Redis instance using [StackExchange.Redis][stackexchange.redis] with [Redis instrumentation][redis-instrumentation] enabled. |
@@ -95,6 +96,7 @@ cd aspnetcore-opentelemetry-benchmarks
 | OpenTelemetry.Extensions.Hosting | [![OpenTelemetry.Extensions.Hosting version][badge-hosting]][package-hosting] |
 | OpenTelemetry.Instrumentation.AspNetCore | [![OpenTelemetry.Instrumentation.AspNetCore version][badge-aspnetcore]][package-aspnetcore] |
 | OpenTelemetry.Instrumentation.AWS | [![OpenTelemetry.Instrumentation.AWS version][badge-aws]][package-aws] |
+| OpenTelemetry.Instrumentation.EntityFrameworkCore | [![OpenTelemetry.Instrumentation.EntityFrameworkCore version][badge-efcore]][package-efcore] |
 | OpenTelemetry.Instrumentation.Http | [![OpenTelemetry.Instrumentation.Http version][badge-http]][package-http] |
 | OpenTelemetry.Instrumentation.SqlClient | [![OpenTelemetry.Instrumentation.SqlClient version][badge-sqlclient]][package-sqlclient] |
 | OpenTelemetry.Instrumentation.StackExchangeRedis | [![OpenTelemetry.Instrumentation.StackExchangeRedis version][badge-redis]][package-redis] |
@@ -120,6 +122,7 @@ This project is licensed under the [Apache 2.0][license] license.
 [badge-aspnetcore]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.AspNetCore'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-aws]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.AWS'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-benchmarkdotnet]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'BenchmarkDotNet'%5D%2F%40Version&logo=nuget&label=version
+[badge-efcore]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.EntityFrameworkCore'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-hosting]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Extensions.Hosting'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-http]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.Http'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-otlp]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Exporter.OpenTelemetryProtocol'%5D%2F%40Version&logo=opentelemetry&label=version
@@ -132,6 +135,8 @@ This project is licensed under the [Apache 2.0][license] license.
 [counter]: https://learn.microsoft.com/dotnet/api/system.diagnostics.metrics.counter-1
 [docker]: https://docs.docker.com/get-started/
 [dotnet-sdk]: https://dotnet.microsoft.com/download
+[efcore]: https://learn.microsoft.com/ef/core/
+[efcore-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore#readme
 [grafana-cloud]: https://grafana.com/solutions/opentelemetry/
 [grafana-lgtm]: https://github.com/grafana/docker-otel-lgtm
 [http-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Http#readme
@@ -143,6 +148,7 @@ This project is licensed under the [Apache 2.0][license] license.
 [opentelemetry-dotnet]: https://github.com/open-telemetry/opentelemetry-dotnet
 [package-aspnetcore]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AspNetCore
 [package-aws]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AWS
+[package-efcore]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.EntityFrameworkCore
 [package-hosting]: https://www.nuget.org/packages/OpenTelemetry.Extensions.Hosting
 [package-http]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Http
 [package-otlp]: https://www.nuget.org/packages/OpenTelemetry.Exporter.OpenTelemetryProtocol

@@ -40,8 +40,7 @@ public interface IScenario
 
     void Configure(OpenTelemetryBuilder telemetry, TelemetryConfiguration configuration)
     {
-        telemetry.ConfigureResource((resource) => resource.AddService("Benchmarks"))
-                 .UseOtlpExporter();
+        telemetry.ConfigureResource((resource) => resource.AddService("Benchmarks"));
 
         if (configuration.EnableMetrics)
         {
@@ -51,6 +50,28 @@ public interface IScenario
         if (configuration.EnableTraces)
         {
             telemetry.WithTracing(Configure);
+        }
+
+        if (configuration.EnableAll)
+        {
+            telemetry.UseOtlpExporter();
+        }
+        else
+        {
+            if (configuration.EnableLogs)
+            {
+                telemetry.WithLogging((builder) => builder.AddOtlpExporter());
+            }
+
+            if (configuration.EnableMetrics)
+            {
+                telemetry.WithMetrics((builder) => builder.AddOtlpExporter());
+            }
+
+            if (configuration.EnableTraces)
+            {
+                telemetry.WithTracing((builder) => builder.AddOtlpExporter());
+            }
         }
     }
 

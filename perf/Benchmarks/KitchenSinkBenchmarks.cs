@@ -6,17 +6,20 @@ using Amazon.S3.Model;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using StackExchange.Redis;
+using BenchmarkContext = MartinCostello.AspNetCoreOpenTelemetry.Benchmarks.EFCoreBenchmarks.BenchmarkContext;
 
 namespace MartinCostello.AspNetCoreOpenTelemetry.Benchmarks;
 
 [BenchmarkCategory("ASP.NET Core")]
 [BenchmarkCategory("AWS")]
+[BenchmarkCategory("EFCore")]
 [BenchmarkCategory("HTTP")]
 [BenchmarkCategory("Logs")]
 [BenchmarkCategory("Metrics")]
@@ -77,6 +80,12 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
             return new SqlConnection(connectionString);
         });
+
+        services.AddDbContext<BenchmarkContext>((provider, options) =>
+        {
+            var configuration = provider.GetRequiredService<IConfiguration>();
+            options.UseSqlServer(configuration.GetConnectionString("SqlServer"));
+        });
     }
 
     public void Configure(List<KeyValuePair<string, string?>> configuration)
@@ -111,6 +120,7 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
     {
         tracing.AddAspNetCoreInstrumentation()
                .AddAWSInstrumentation()
+               .AddEntityFrameworkCoreInstrumentation()
                .AddHttpClientInstrumentation()
                .AddRedisInstrumentation()
                .AddSqlClientInstrumentation()
@@ -121,8 +131,21 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
     public void Configure(WebApplication app)
     {
+        using (var context = app.Services.GetRequiredService<BenchmarkContext>())
+        {
+#pragma warning disable IL3050
+            context.Database.EnsureCreated();
+#pragma warning restore IL3050
+        }
+
         app.MapGet("/echo", () => TypedResults.NoContent());
-        app.MapGet("/everything", async (IAmazonS3 client, HttpClient httpClient, MetricBenchmarks.CustomMetrics metrics, IDatabase database, SqlConnection connection) =>
+        app.MapGet("/everything", async (
+            IAmazonS3 client,
+            HttpClient httpClient,
+            MetricBenchmarks.CustomMetrics metrics,
+            IDatabase database,
+            SqlConnection connection,
+            BenchmarkContext context) =>
         {
             using var activity = TraceBenchmarks.CustomSource.StartActivity("CustomActivity");
             activity?.SetTag("custom.trace.tag", "value");
@@ -148,6 +171,8 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
             command.CommandText = "SELECT 1";
             _ = await command.ExecuteScalarAsync();
+
+            _ = await context.Items.OrderBy((p) => p.Name).CountAsync();
 
             return TypedResults.NoContent();
         });
