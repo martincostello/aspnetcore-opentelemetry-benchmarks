@@ -33,6 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <!-- See https://learn.microsoft.com/aspnet/core/release-notes/aspnetcore-11#native-opentelemetry-tracing-for-aspnet-core -->
-    <RuntimeHostConfigurationOption Include="Microsoft.AspNetCore.Hosting.SuppressActivityOpenTelemetryData" Value="false" />
+    <RuntimeHostConfigurationOption Include="Microsoft.AspNetCore.Hosting.SuppressActivityOpenTelemetryData" Value="true" />
   </ItemGroup>
 </Project>
