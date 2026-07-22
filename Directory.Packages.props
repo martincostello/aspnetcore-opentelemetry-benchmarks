@@ -12,7 +12,7 @@
     <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.10" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.12" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.1-alpha.0.43" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.16.1-alpha.0.214" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1.30" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.1-alpha.0.42" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.17.1-alpha.0.32" />
