@@ -8,15 +8,15 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.1-alpha.0.28" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.26" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.28" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.1-alpha.0.80" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.17.1-alpha.0.35" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1.67" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.1-alpha.0.79" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.17.1-alpha.0.69" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.17.0-beta.1.74" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.1-alpha.0.29" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.27" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.29" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.1-alpha.0.86" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.17.1-alpha.0.41" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1.73" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.1-alpha.0.85" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.17.1-alpha.0.75" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.17.0-beta.1.80" />
     <PackageVersion Include="StackExchange.Redis" Version="3.0.17" />
     <PackageVersion Include="Testcontainers" Version="4.13.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.13.0" />
