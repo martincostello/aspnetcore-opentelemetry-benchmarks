@@ -8,9 +8,9 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.1-alpha.0.45" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.43" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.45" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.1-alpha.0.49" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.47" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.49" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.1-alpha.0.108" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.17.1-alpha.0.63" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1.95" />
