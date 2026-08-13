@@ -8,15 +8,15 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.1" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.1-alpha.0.83" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.81" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.83" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.1-alpha.0.128" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.17.1-alpha.0.83" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1.115" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.1-alpha.0.127" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.17.1-alpha.0.117" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.17.0-beta.1.122" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.1-alpha.0.86" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1.84" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.1-alpha.0.86" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.1-alpha.0.146" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.17.1-alpha.0.101" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1.133" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.1-alpha.0.145" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.17.1-alpha.0.135" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.17.0-beta.1.140" />
     <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <PackageVersion Include="StackExchange.Redis" Version="3.1.13" />
     <PackageVersion Include="Testcontainers" Version="4.13.0" />
