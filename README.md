@@ -45,9 +45,13 @@ The benchmarks self-host an ASP.NET Core application using Kestrel and make HTTP
 using the `HttpClient` class. Each benchmark implements a "scenario" that exercises different code paths
 that affect different common use cases for a web application.
 
-Each scenario is run for 5 benchmarks that cover no telemetry, logs only, metrics only, traces only and all
+Most scenarios are run for 5 benchmarks that cover no telemetry, logs only, metrics only, traces only and all
 three telemetry signals enabled. The benchmark results can then be used to infer the overhead of each telemetry
 signal type for the workload that a particular scenario exercises.
+
+The OpenTelemetry Specification benchmark is the exception: it directly exercises the OpenTelemetry tracing API
+using the span configuration documented in [Performance Benchmark of OpenTelemetry API][opentelemetry-spec-benchmark]
+and compares both simple and batch OTLP trace export processors.
 
 When one or more telemetry signals are enabled, the benchmarks are configured to export telemetry to a local
 OpenTelemetry Collector instance running in Docker using the OpenTelemetry Protocol (OTLP) exporter.
@@ -67,6 +71,7 @@ The current scenarios included in the benchmarks are:
 | AWS | Uses the AWS S3 SDK with [AWS instrumentation][aws-instrumentation] enabled. |
 | EFCore | Executes an SQL query using [`EFCore`][efcore] with [EFCore instrumentation][efcore-instrumentation] enabled. |
 | HTTP Client | Performs a loopback request to itself using [`HttpClient`][httpclient] with [HTTP instrumentation][http-instrumentation] enabled. |
+| OpenTelemetry Specification | Directly benchmarks OpenTelemetry span creation and OTLP export as described by the [OpenTelemetry performance benchmark specification][opentelemetry-spec-benchmark]. |
 | Prometheus | Uses a [Prometheus][prometheus] exporter for metrics instead of OTLP. |
 | Redis | Pings a Redis instance using [StackExchange.Redis][stackexchange.redis] with [Redis instrumentation][redis-instrumentation] enabled. |
 | SQL Server | Executes an SQL query using [`SqlClient`][sqlclient] with [SQL Client instrumentation][sqlclient-instrumentation] enabled. |
@@ -146,6 +151,7 @@ This project is licensed under the [Apache 2.0][license] license.
 [license]: https://www.apache.org/licenses/LICENSE-2.0.txt
 [opentelemetry-collector]: https://github.com/open-telemetry/opentelemetry-collector
 [opentelemetry-dotnet]: https://github.com/open-telemetry/opentelemetry-dotnet
+[opentelemetry-spec-benchmark]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/performance-benchmark.md
 [package-aspnetcore]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AspNetCore
 [package-aws]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AWS
 [package-efcore]: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.EntityFrameworkCore
