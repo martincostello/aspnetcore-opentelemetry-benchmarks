@@ -19,5 +19,6 @@
       "ignoreUnstable": false,
       "groupName": "OpenTelemetry"
     }
-  ]
+  ],
+  "schedule": ["* 5-21 * * *"]
 }
