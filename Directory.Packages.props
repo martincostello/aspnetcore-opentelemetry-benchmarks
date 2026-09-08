@@ -7,7 +7,7 @@
     <PackageVersion Include="AWSSDK.S3" Version="4.0.103.3" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.2" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0-preview.7.26381.103" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0-rc.1.26425.128" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.2-alpha.0.40" />
     <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.19.1-beta.1.38" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.2-alpha.0.40" />
