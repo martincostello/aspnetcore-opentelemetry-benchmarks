@@ -57,6 +57,7 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
             var config = new AmazonS3Config()
             {
+                AuthenticationRegion = configuration["AWS_REGION"],
                 ForcePathStyle = true,
                 ServiceURL = configuration["AWS_ENDPOINT_URL_S3"],
             };
