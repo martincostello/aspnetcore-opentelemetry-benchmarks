@@ -9,5 +9,7 @@ public sealed class SqlServerFixture : ContainerFixture<MsSqlContainer>
 {
     protected override string DockerfileName => "sqlserver.Dockerfile";
 
-    protected override MsSqlContainer CreateContainer() => new MsSqlBuilder(GetImage()).Build();
+    protected override MsSqlContainer CreateContainer() => new MsSqlBuilder(GetImage())
+        .WithCreateParameterModifier((p) => p.User = "root")
+        .Build();
 }
