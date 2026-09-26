@@ -6,6 +6,7 @@
 param(
     [Parameter(Mandatory = $false)][string] $Filter = "*",
     [Parameter(Mandatory = $false)][string] $Job = "",
+    [Parameter(Mandatory = $false)][string] $Affinity = "",
     [Parameter(Mandatory = $false)][switch] $EnableProfiler
 )
 
@@ -78,6 +79,11 @@ Write-Information "Running benchmarks..."
 $additionalArgs = @(
     "--consumeTasksSynchronously" # For backwards compatibility with BenchmarkDotNet versions before 0.16.0
 )
+
+if (-Not [string]::IsNullOrEmpty($Affinity)) {
+    $additionalArgs += "--affinity"
+    $additionalArgs += $Affinity
+}
 
 if (-Not [string]::IsNullOrEmpty($Filter)) {
     $additionalArgs += "--filter"
