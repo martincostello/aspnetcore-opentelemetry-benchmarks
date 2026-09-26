@@ -17,7 +17,23 @@ public abstract class ContainerFixture : IAsyncDisposable
         GC.SuppressFinalize(this);
     }
 
-    public Task StartAsync() => Container.StartAsync();
+    public async Task StartAsync()
+    {
+        const int MaxAttempts = 3;
+
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            try
+            {
+                await this.Container.StartAsync();
+                return;
+            }
+            catch when (attempt < MaxAttempts)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+            }
+        }
+    }
 
     public Uri GetBaseAddress(int port) =>
         new UriBuilder(Uri.UriSchemeHttp, Container.Hostname, Container.GetMappedPublicPort(port)).Uri;
