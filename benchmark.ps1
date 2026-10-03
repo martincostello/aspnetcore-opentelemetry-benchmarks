@@ -7,6 +7,7 @@ param(
     [Parameter(Mandatory = $false)][string] $Filter = "*",
     [Parameter(Mandatory = $false)][string] $Job = "",
     [Parameter(Mandatory = $false)][string] $Affinity = "",
+    [Parameter(Mandatory = $false)][string] $Artifacts = "",
     [Parameter(Mandatory = $false)][switch] $EnableProfiler
 )
 
@@ -83,6 +84,11 @@ $additionalArgs = @(
 if (-Not [string]::IsNullOrEmpty($Affinity)) {
     $additionalArgs += "--affinity"
     $additionalArgs += $Affinity
+}
+
+if (-Not [string]::IsNullOrEmpty($Artifacts)) {
+    $additionalArgs += "--artifacts"
+    $additionalArgs += $Artifacts
 }
 
 if (-Not [string]::IsNullOrEmpty($Filter)) {
