@@ -62,7 +62,7 @@ internal sealed class StubOtlpCollector : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await Console.Error.WriteLineAsync(ex.ToString());
+            await Console.Error.WriteLineAsync(ex.ToString(), cancellationToken);
             return ex.HResult;
         }
 
