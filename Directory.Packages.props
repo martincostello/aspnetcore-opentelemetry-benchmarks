@@ -17,7 +17,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.2-alpha.0.68" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.20.2-alpha.0.56" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.20.1-beta.1.55" />
-    <PackageVersion Include="StackExchange.Redis" Version="3.4.0" />
+    <PackageVersion Include="StackExchange.Redis" Version="3.4.20" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageVersion Include="Testcontainers" Version="4.16.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.16.0" />
