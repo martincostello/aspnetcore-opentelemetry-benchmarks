@@ -94,7 +94,6 @@ cd aspnetcore-opentelemetry-benchmarks
 | OpenTelemetry.Exporter.OpenTelemetryProtocol | [![OpenTelemetry.Exporter.OpenTelemetryProtocol version][badge-otlp]][package-otlp] |
 | OpenTelemetry.Exporter.Prometheus.AspNetCore | [![OpenTelemetry.Exporter.Prometheus.AspNetCore version][badge-prometheus]][package-prometheus] |
 | OpenTelemetry.Extensions.Hosting | [![OpenTelemetry.Extensions.Hosting version][badge-hosting]][package-hosting] |
-| OpenTelemetry.Instrumentation.AspNetCore | [![OpenTelemetry.Instrumentation.AspNetCore version][badge-aspnetcore]][package-aspnetcore] |
 | OpenTelemetry.Instrumentation.AWS | [![OpenTelemetry.Instrumentation.AWS version][badge-aws]][package-aws] |
 | OpenTelemetry.Instrumentation.EntityFrameworkCore | [![OpenTelemetry.Instrumentation.EntityFrameworkCore version][badge-efcore]][package-efcore] |
 | OpenTelemetry.Instrumentation.Http | [![OpenTelemetry.Instrumentation.Http version][badge-http]][package-http] |
@@ -117,7 +116,6 @@ This project is licensed under the [Apache 2.0][license] license.
 [activitysource]: https://learn.microsoft.com/dotnet/api/system.diagnostics.activitysource
 [aspnetcore]: https://github.com/dotnet/aspnetcore
 [aws-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AWS#readme
-[aspnetcore-instrumentation]: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore#readme
 [badge-dotnet]: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2Fglobal.json&query=%24.sdk.version&logo=.net&label=version
 [badge-aspnetcore]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.AspNetCore'%5D%2F%40Version&logo=opentelemetry&label=version
 [badge-aws]: https://img.shields.io/badge/dynamic/xml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmartincostello%2Faspnetcore-opentelemetry-benchmarks%2Frefs%2Fheads%2Fmain%2FDirectory.Packages.props&query=%2F%2FPackageVersion%5B%40Include%3D'OpenTelemetry.Instrumentation.AWS'%5D%2F%40Version&logo=opentelemetry&label=version
