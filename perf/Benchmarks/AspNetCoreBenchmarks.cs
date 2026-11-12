@@ -15,12 +15,12 @@ public class AspNetCoreBenchmarks : Benchmarks, IScenario
 
     public void Configure(MeterProviderBuilder metrics)
     {
-        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddMeter("Microsoft.AspNetCore.*");
     }
 
     public void Configure(TracerProviderBuilder tracing)
     {
-        tracing.AddAspNetCoreInstrumentation();
+        tracing.AddSource("Microsoft.AspNetCore");
     }
 
     public void Configure(WebApplication app)

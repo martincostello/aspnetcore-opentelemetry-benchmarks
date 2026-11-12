@@ -17,7 +17,6 @@
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AWS" />
     <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
@@ -30,9 +29,5 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="BenchmarkDotNet.Attributes" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- See https://learn.microsoft.com/aspnet/core/release-notes/aspnetcore-11#native-opentelemetry-tracing-for-aspnet-core -->
-    <RuntimeHostConfigurationOption Include="Microsoft.AspNetCore.Hosting.SuppressActivityOpenTelemetryData" Value="true" />
   </ItemGroup>
 </Project>

@@ -111,20 +111,20 @@ public partial class KitchenSinkBenchmarks : Benchmarks, IScenario
 
     public void Configure(MeterProviderBuilder metrics)
     {
-        metrics.AddAspNetCoreInstrumentation()
-               .AddHttpClientInstrumentation()
+        metrics.AddHttpClientInstrumentation()
                .AddSqlClientInstrumentation()
+               .AddMeter("Microsoft.AspNetCore.*")
                .AddMeter(MetricBenchmarks.MeterName);
     }
 
     public void Configure(TracerProviderBuilder tracing)
     {
-        tracing.AddAspNetCoreInstrumentation()
-               .AddAWSInstrumentation()
+        tracing.AddAWSInstrumentation()
                .AddEntityFrameworkCoreInstrumentation()
                .AddHttpClientInstrumentation()
                .AddRedisInstrumentation()
                .AddSqlClientInstrumentation()
+               .AddSource("Microsoft.AspNetCore")
                .AddSource(TraceBenchmarks.CustomSource.Name);
     }
 
