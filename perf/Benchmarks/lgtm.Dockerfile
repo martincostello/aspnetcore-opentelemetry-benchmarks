@@ -1,1 +1,1 @@
-FROM grafana/otel-lgtm:0.41.1@sha256:1b852b77d7bcadb7699bfe7c78a51d059dff85168de674728cf7abf4474645e5
+FROM grafana/otel-lgtm:0.41.2@sha256:79dbbe04d810bfe93fd0310610a1643ba4ed420e7432143a810e71e9cba2541e
