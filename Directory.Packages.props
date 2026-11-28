@@ -9,13 +9,13 @@
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="8.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.21.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.21.0-beta.1.58" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.21.0-beta.1.60" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AWS" Version="1.21.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.21.0-beta.2.26" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.21.1-alpha.0.74" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.21.1-alpha.0.65" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.21.0-beta.1.66" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.21.0-beta.2.29" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.21.1-alpha.0.77" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.21.1-alpha.0.68" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.21.0-beta.1.69" />
     <PackageVersion Include="StackExchange.Redis" Version="3.4.35" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
     <PackageVersion Include="Testcontainers" Version="4.17.0" />
